@@ -1,0 +1,166 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "ToolHub & Lab Unified API",
+    "description": "API спецификация сервера ToolHub Core для оркестрации инструментов LLM-агентов и администрирования экосистемы.",
+    "version": "2.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Unified Local Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "agentAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-agent-password",
+        "description": "Секретный токен доступа агента (по умолчанию '123')"
+      },
+      "adminAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-admin-password",
+        "description": "Мастер-пароль администратора (по умолчанию 'admin')"
+      }
+    }
+  },
+  "paths": {
+    "/prompt": {
+      "get": {
+        "summary": "Получение системного промпта со списком доступных ресурсов",
+        "tags": ["Agent API"],
+        "security": [{ "agentAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Скомпилированный системный промпт",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "prompt": { "type": "string" }
+                  },
+                  "required": ["prompt"]
+                }
+              }
+            }
+          },
+          "401": { "description": "Неверный пароль агента" }
+        }
+      }
+    },
+    "/{path}": {
+      "get": {
+        "summary": "Навигация по категориям навыков (listTools)",
+        "tags": ["Agent API"],
+        "security": [{ "agentAuth": [] }],
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Виртуальный путь к папке категорий (например 'system' или 'files')"
+          }
+        ],
+        "responses": {
+          "200": { "description": "Список категорий или инструментов с JSON-схемами" },
+          "401": { "description": "Неверный пароль агента" },
+          "404": { "description": "Категория не найдена" }
+        }
+      },
+      "post": {
+        "summary": "Исполнение инструмента (callTool)",
+        "tags": ["Agent API"],
+        "security": [{ "agentAuth": [] }],
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Абсолютный путь к инструменту (например 'sublime/replace-literal')"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Результат выполнения скрипта" },
+          "401": { "description": "Неверный пароль агента" },
+          "500": { "description": "Ошибка исполнения инструмента или таймаут" }
+        }
+      }
+    },
+    "/admin/api/auth/verify": {
+      "post": {
+        "summary": "Проверка пароля администратора",
+        "tags": ["Admin API"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "password": { "type": "string" }
+                },
+                "required": ["password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Авторизация успешна" },
+          "401": { "description": "Неверный пароль" }
+        }
+      }
+    },
+    "/admin/api/categories": {
+      "get": {
+        "summary": "Получить список всех категорий",
+        "tags": ["Admin API"],
+        "security": [{ "adminAuth": [] }],
+        "responses": {
+          "200": { "description": "Массив категорий" }
+        }
+      },
+      "post": {
+        "summary": "Создать новую категорию",
+        "tags": ["Admin API"],
+        "security": [{ "adminAuth": [] }],
+        "responses": {
+          "200": { "description": "Категория успешно создана" }
+        }
+      }
+    },
+    "/admin/api/runners": {
+      "get": {
+        "summary": "Получить список раннеров выполнения скриптов",
+        "tags": ["Admin API"],
+        "security": [{ "adminAuth": [] }],
+        "responses": {
+          "200": { "description": "Массив раннеров" }
+        }
+      }
+    },
+    "/admin/api/logs": {
+      "get": {
+        "summary": "Журнал аудита вызовов инструментов",
+        "tags": ["Admin API"],
+        "security": [{ "adminAuth": [] }],
+        "responses": {
+          "200": { "description": "Список логов выполнения" }
+        }
+      }
+    }
+  }
+}
