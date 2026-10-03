@@ -196,8 +196,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const queuedTokens = countTokens(input, tokenizerType);
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-2 pb-1 md:px-4 md:pb-2 select-none font-sans pointer-events-auto">
-      <div className="p-2.5 md:p-3 max-w-full w-full rounded-xl md:rounded-2xl shadow-none md:shadow-2xl border border-border/80 bg-card/95 backdrop-blur-md flex flex-col gap-1.5 md:gap-2 transition-all focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20">
+    <div className="w-full max-w-4xl mx-auto px-2 pb-1 md:px-4 md:pb-2 font-sans pointer-events-auto">
+      <div className="p-2.5 md:p-3 max-w-full w-full rounded-xl md:rounded-2xl shadow-md md:shadow-lg border border-slate-200 bg-white flex flex-col gap-1.5 md:gap-2 transition-all focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
         <textarea
           ref={textareaRef}
           placeholder={

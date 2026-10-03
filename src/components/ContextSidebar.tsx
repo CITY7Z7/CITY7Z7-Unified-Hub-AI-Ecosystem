@@ -91,6 +91,46 @@ export const ContextSidebar: React.FC = () => {
   const [isRecordingHotkey, setIsRecordingHotkey] = useState(false);
   const [isVoiceCardExpanded, setIsVoiceCardExpanded] = useState(false);
 
+  // Пользовательская изменяемая ширина правого сайдбара
+  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('sidebar_right_width');
+      return saved ? Math.max(260, Math.min(650, Number(saved))) : 340;
+    } catch {
+      return 340;
+    }
+  });
+  const [isResizing, setIsResizing] = useState(false);
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const newWidth = Math.max(260, Math.min(650, window.innerWidth - e.clientX));
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      try {
+        localStorage.setItem('sidebar_right_width', String(sidebarWidth));
+      } catch {}
+    };
+
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing, sidebarWidth]);
+
   const [activeTab, setActiveTab] = useState<'integrations' | 'control' | 'analytics'>('control');
   const [selectedAction, setSelectedAction] = useState<'deleteFirst' | 'keepLast' | 'deleteLast' | 'deleteHeavy' | 'compressCode' | 'unpinAll'>('deleteFirst');
   const [actionValue, setActionValue] = useState<number>(5);
@@ -359,12 +399,26 @@ export const ContextSidebar: React.FC = () => {
 
   return (
     <div 
-      className={`bg-card border-l border-border flex flex-col h-full text-foreground select-none shrink-0 transition-all duration-300 ease-in-out fixed inset-y-0 right-0 z-50 lg:static lg:z-auto text-sm ${
-        isContextSidebarOpen
-          ? 'w-full lg:w-80 translate-x-0 shadow-2xl lg:shadow-none opacity-100'
-          : 'translate-x-full lg:translate-x-0 lg:w-0 lg:overflow-hidden lg:border-l-0 opacity-0 lg:opacity-100'
+      style={{
+        width: isContextSidebarOpen
+          ? (typeof window !== 'undefined' && window.innerWidth >= 1024 ? `${sidebarWidth}px` : '100%')
+          : 0
+      }}
+      className={`bg-white border-l border-slate-200 flex flex-col h-full text-slate-900 select-none shrink-0 relative shadow-sm ${
+        isResizing ? 'transition-none' : 'transition-[width] duration-200 ease-in-out'
+      } fixed inset-y-0 right-0 z-50 lg:static lg:z-auto text-sm ${
+        !isContextSidebarOpen ? 'overflow-hidden border-l-0' : ''
       }`}
     >
+      {/* Ручка изменения ширины правого сайдбара (Resize Handle) */}
+      <div
+        onMouseDown={(e) => {
+          e.preventDefault();
+          setIsResizing(true);
+        }}
+        className="hidden lg:block absolute left-0 top-0 bottom-0 w-2 hover:w-2.5 bg-transparent hover:bg-blue-500/25 active:bg-blue-600/40 cursor-col-resize z-40 transition-colors"
+        title="Потяните для изменения ширины панели"
+      />
       {/* 1. ШАПКА С МИКРО-БЕЙДЖАМИ (Строго 74px на ПК, адаптивно под мобилу) */}
       <div className="px-3 py-2 pt-[calc(0.5rem+env(safe-area-inset-top))] lg:pt-2 lg:h-[74px] lg:min-h-[74px] lg:max-h-[74px] border-b border-border flex items-center shrink-0 bg-card z-10 box-border overflow-hidden">
         {/* Мобильная кнопка закрытия панели */}
@@ -788,19 +842,6 @@ export const ContextSidebar: React.FC = () => {
                       type="text"
                       value={toolhubUrl}
                       onChange={(e) => setToolhubUrl(e.target.value)}
-                      className="w-full bg-background border border-border rounded-md px-2.5 py-1.5 text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground font-semibold uppercase flex items-center gap-1">
-                      <Lock className="w-3 h-3 text-muted-foreground" />
-                      {t('context.access_password')}
-                    </label>
-                    <input
-                      type="password"
-                      value={toolhubPassword || ''}
-                      onChange={(e) => setToolhubPassword(e.target.value)}
                       className="w-full bg-background border border-border rounded-md px-2.5 py-1.5 text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                     />
                   </div>

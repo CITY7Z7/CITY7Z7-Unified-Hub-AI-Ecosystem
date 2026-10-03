@@ -166,13 +166,8 @@ const normalizePath = (p: string) => {
   return decoded.replace(/\/+$/, '') || '/';
 };
 
-const checkAgentAuth = async (request: any, reply: any): Promise<boolean> => {
-  const settings = await prisma.systemSetting.findFirst();
-  const secret = settings?.agentSecret || '123';
-  if (request.headers['x-agent-password'] !== secret) {
-    reply.status(401).send({ error: 'Unauthorized: Invalid Agent Password' });
-    return true;
-  }
+const checkAgentAuth = async (_request: any, _reply: any): Promise<boolean> => {
+  // Открытый доступ для домашнего ПК: пароли вырезаны
   return false;
 };
 

@@ -7,7 +7,7 @@ import { useTranslation } from '../lib/i18n';
 import { buildChatTree, type TreeNode, type FolderNode, type ChatNode } from '../lib/chatTree';
 import { 
   Plus, MessageSquare, BrainCircuit, Trash2, Edit2, Check, X, 
-  Settings, Sun, Moon, Languages, PanelLeftClose, Search, 
+  PanelLeftClose, Search, 
   Folder, FolderOpen, ChevronRight, ChevronDown, FolderTree, List,
   FoldVertical
 } from 'lucide-react';
@@ -31,17 +31,15 @@ const formatTokens = (tokens?: number) => {
 };
 
 interface SidebarProps {
-  onOpenSettings: () => void;
+  onOpenSettings?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings }) => {
-  const { t, lang, setLang } = useTranslation();
+export const Sidebar: React.FC<SidebarProps> = () => {
+  const { t } = useTranslation();
   const { 
     activeChatId, 
     setActiveChatId, 
     models, 
-    theme, 
-    setTheme, 
     isLeftSidebarOpen, 
     setLeftSidebarOpen,
     chatViewMode,
@@ -49,6 +47,47 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings }) => {
     minPrefixLength,
     minGroupSize
   } = useChatStore();
+
+  // Пользовательская изменяемая ширина левого сайдбара
+  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('sidebar_left_width');
+      return saved ? Math.max(220, Math.min(600, Number(saved))) : 320;
+    } catch {
+      return 320;
+    }
+  });
+  const [isResizing, setIsResizing] = useState(false);
+
+  // Слушатель изменения ширины через перетаскивание границы
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const newWidth = Math.max(220, Math.min(600, e.clientX));
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      try {
+        localStorage.setItem('sidebar_left_width', String(sidebarWidth));
+      } catch {}
+    };
+
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing, sidebarWidth]);
 
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
@@ -598,82 +637,43 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings }) => {
 
   return (
     <div 
-      className={`bg-card border-r border-border flex flex-col h-full text-foreground select-none shrink-0 transition-all duration-300 ease-in-out fixed inset-y-0 left-0 z-50 md:static md:z-auto ${
-        isLeftSidebarOpen 
-          ? 'w-full md:w-80 translate-x-0' 
-          : '-translate-x-full md:translate-x-0 md:w-0 md:overflow-hidden md:border-r-0'
+      style={{
+        width: isLeftSidebarOpen 
+          ? (typeof window !== 'undefined' && window.innerWidth >= 768 ? `${sidebarWidth}px` : '100%') 
+          : 0
+      }}
+      className={`bg-white border-r border-slate-200 flex flex-col h-full text-slate-900 select-none shrink-0 relative shadow-sm ${
+        isResizing ? 'transition-none' : 'transition-[width] duration-200 ease-in-out'
+      } fixed inset-y-0 left-0 z-50 md:static md:z-auto ${
+        !isLeftSidebarOpen ? 'overflow-hidden border-r-0' : ''
       }`}
     >
-      {/* Шапка боковой панели */}
-      <div className="px-5 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] md:p-[22px] md:h-[74px] md:min-h-[74px] md:max-h-[74px] border-b border-border flex items-center justify-between min-w-[320px]">
-        <div className="flex items-center gap-2">
-          <span className="font-bold text-xl tracking-tight text-foreground">
-            🧪 lab
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
-          <a
-            href={settings.githubUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent hover:border-border transition-all"
-            title={t('sidebar.github_repo')}
-          >
-            <img 
-              src={theme === 'dark' ? '/GitHub_Invertocat_White.svg' : '/GitHub_Invertocat_Black.svg'} 
-              className="w-4 h-4" 
-              alt="GitHub"
-            />
-          </a>
+      {/* Ручка изменения ширины сайдбара (Resize Handle) */}
+      <div
+        onMouseDown={(e) => {
+          e.preventDefault();
+          setIsResizing(true);
+        }}
+        className="hidden md:block absolute right-0 top-0 bottom-0 w-2 hover:w-2.5 bg-transparent hover:bg-blue-500/25 active:bg-blue-600/40 cursor-col-resize z-40 transition-colors"
+        title="Потяните для изменения ширины сайдбара"
+      />
 
-          <div className="relative p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent hover:border-border transition-all cursor-pointer">
-            <Languages className="w-4 h-4 shrink-0" />
-            <select
-              value={lang}
-              onChange={(e) => setLang(e.target.value as any)}
-              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-              title="Change language / Сменить язык / 切换语言"
-            >
-              <option value="en" className="bg-card text-foreground">English</option>
-              <option value="ru" className="bg-card text-foreground">Русский</option>
-              <option value="zh" className="bg-card text-foreground">中文 (简体)</option>
-            </select>
-          </div>
-
-          <button
-            onClick={toggleTheme}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent hover:border-border transition-all"
-            title={theme === 'dark' ? t('sidebar.theme_light') : t('sidebar.theme_dark')}
-          >
-            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
-
-          <button
-            onClick={onOpenSettings}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent hover:border-border transition-all"
-            title={t('sidebar.open_settings')}
-          >
-            <Settings className="w-4 h-4" />
-          </button>
-
-          <button
-            onClick={() => setLeftSidebarOpen(false)}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent hover:border-border transition-all"
-            title={t('sidebar.collapse')}
-          >
-            <PanelLeftClose className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* 1. БЛОК КНОПКИ "НОВЫЙ ЧАТ" (Полноразмерная монолитная кнопка) */}
-      <div className="h-[53px] min-h-[53px] max-h-[53px] px-3 border-b border-border flex items-center shrink-0 min-w-[320px] box-border">
+      {/* Шапка боковой панели: аккуратная кнопка Новый чат и кнопка сворачивания */}
+      <div className="h-[52px] min-h-[52px] max-h-[52px] px-3 border-b border-slate-200 flex items-center justify-between gap-2 shrink-0 bg-white">
         <button
           onClick={handleCreateChat}
-          className="w-full h-[40px] flex items-center justify-center gap-2 px-4 bg-primary hover:bg-primary/90 active:bg-primary/80 text-primary-foreground font-medium text-sm rounded-lg transition-colors shadow-sm border border-border shrink-0 box-border cursor-pointer"
+          className="flex-1 h-[36px] flex items-center justify-center gap-2 px-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-xs rounded-lg transition-colors shadow-xs border border-blue-700/20 cursor-pointer"
         >
           <Plus className="w-4 h-4 shrink-0" />
           <span className="truncate">{t('sidebar.new_chat')}</span>
+        </button>
+
+        <button
+          onClick={() => setLeftSidebarOpen(false)}
+          className="p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 border border-transparent hover:border-slate-200 transition-all cursor-pointer shrink-0"
+          title={t('sidebar.collapse')}
+        >
+          <PanelLeftClose className="w-4 h-4" />
         </button>
       </div>
 
@@ -960,32 +960,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings }) => {
       )}
  */}
       {/* Футер */}
-      <div className="px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] md:p-4 border-t border-border bg-card text-[10px] text-muted-foreground flex justify-between items-center min-w-[320px]">
-        <span>{t('sidebar.total_chats', { count: chats.length })}</span>
-        <a
-          href={settings.githubUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:text-foreground transition-colors font-semibold flex items-center gap-1.5"
-        >
-          <img 
-            src={theme === 'dark' ? '/GitHub_Invertocat_White.svg' : '/GitHub_Invertocat_Black.svg'} 
-            className="w-3.5 h-3.5" 
-            alt="GitHub"
-          />
-          <span>GitHub</span>
-        </a>
+      <div className="px-4 py-3 border-t border-slate-200 bg-slate-50 text-[11px] text-slate-500 flex justify-between items-center shrink-0">
+        <span className="font-medium">{t('sidebar.total_chats', { count: chats.length })}</span>
         {(() => {
           const ver = packageJson.version || '1.2.0';
           const isRc = ver.includes('-rc');
           return (
             <span 
-              className={`px-1.5 py-0.5 rounded-md font-mono text-[11px] font-bold tracking-tight transition-colors border ${
+              className={`px-2 py-0.5 rounded-md font-mono text-[11px] font-bold tracking-tight transition-colors border ${
                 isRc 
-                  ? 'bg-amber-500/10 text-amber-500 border-amber-500/30' 
-                  : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
+                  ? 'bg-amber-50 text-amber-700 border-amber-300' 
+                  : 'bg-emerald-50 text-emerald-700 border-emerald-300'
               }`}
-              title={isRc ? 'Release Candidate (Staging build)' : 'Stable Release'}
+              title={isRc ? 'Release Candidate' : 'Stable Release'}
             >
               v{ver}
             </span>

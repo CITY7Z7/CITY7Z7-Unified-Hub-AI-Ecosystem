@@ -1,6 +1,8 @@
 {
-  "name": "Lab + ToolHub Unified AI Ecosystem",
+  "name": "CITY7Z7-Unified-Hub-AI-Ecosystem",
   "description": "Unified AI Studio workbench with dynamic tool orchestration, chat trees, Monaco editor, and Fastify skill execution engine.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

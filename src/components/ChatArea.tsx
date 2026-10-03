@@ -500,67 +500,69 @@ const MessageItem: React.FC<MessageItemProps> = React.memo(({
   return (
     <div
       id={`msg-${msg.id}`}
-      className={`group flex gap-2 md:gap-3 p-2 md:p-3 rounded-lg border transition-all relative ${
+      className={`group flex gap-2 md:gap-3 p-3 md:p-4 rounded-xl border transition-all relative ${
         msg.isPinned
-          ? 'bg-amber-500/5 dark:bg-amber-500/10 border-amber-500/40 shadow-sm'
+          ? 'bg-amber-50/70 border-amber-300 shadow-xs'
           : isUser
-          ? 'bg-emerald-300/5 border-border/40'
-          : 'bg-card border-emerald-300/80'
+          ? 'bg-blue-50/60 border-blue-200/80 shadow-xs'
+          : 'bg-white border-slate-200 shadow-xs'
       }`}
     >
       <div
-        className={`w-6 h-6 md:w-8 md:h-8 rounded-md md:rounded-lg flex items-center justify-center shrink-0 border select-none mt-0.5 md:mt-0 ${
+        className={`w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center shrink-0 border select-none mt-0.5 md:mt-0 ${
           isUser
-            ? 'bg-primary/10 border-primary/20 text-foreground'
-            : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+            ? 'bg-blue-600 text-white border-blue-700/30 shadow-xs'
+            : 'bg-emerald-600 text-white border-emerald-700/30 shadow-xs'
         }`}
       >
-        {isUser ? <User className="w-3 h-3 md:w-4 md:h-4" /> : <Bot className="w-3 h-3 md:w-4 md:h-4" />}
+        {isUser ? <User className="w-3.5 h-3.5 md:w-4 md:h-4" /> : <Bot className="w-3.5 h-3.5 md:w-4 md:h-4" />}
       </div>
 
       <div className="flex-1 min-w-0 space-y-2">
         <div className="flex items-center justify-between select-none">
           <div className="flex items-center gap-1.5 min-w-0 text-xs">
-            <span className="font-bold text-muted-foreground uppercase tracking-wider truncate">
+            <span className="font-bold text-slate-800 uppercase tracking-wider truncate">
               {isUser ? t('chat.you') : selectedModelName || t('chat.assistant')}
             </span>
-            <span className="text-muted-foreground/40 font-mono select-none">•</span>
+            <span className="text-slate-400 font-mono select-none">•</span>
             <span
-              className="text-xs text-muted-foreground/60 font-mono shrink-0 cursor-help hover:text-foreground transition-colors"
+              className="text-xs text-slate-500 font-mono shrink-0 cursor-help hover:text-slate-800 transition-colors"
               title={new Date(msg.timestamp).toLocaleString(localStorage.getItem('lab-lang') || 'en', { dateStyle: 'full', timeStyle: 'medium' })}
             >
               {new Date(msg.timestamp).toLocaleTimeString(localStorage.getItem('lab-lang') || 'en', { hour: '2-digit', minute: '2-digit' })}
             </span>
           </div>
-          <div className="hidden md:flex items-center gap-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-            <span className="text-[10px] text-muted-foreground bg-background border border-border px-1.5 py-0.5 rounded font-mono">
+
+          {/* Единая аккуратная панель управления сообщением */}
+          <div className="flex items-center gap-1.5 opacity-90 md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100 transition-opacity">
+            <span className="text-[10px] text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded font-mono select-none shadow-2xs" title={t('chat.tokens', { count: msg.tokens || 0 })}>
               {t('chat.tokens', { count: msg.tokens || 0 })}
             </span>
             <button
               onClick={handleCopyMessage}
-              className={`p-0.5 rounded transition-colors ${
+              className={`p-1 rounded transition-colors ${
                 isCopied
-                  ? 'text-emerald-500 bg-emerald-500/10'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  ? 'text-emerald-700 bg-emerald-100 border border-emerald-300'
+                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-transparent hover:border-slate-200'
               }`}
               title={isCopied ? t('chat.copied_message') : t('chat.copy_message')}
             >
-              {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+              {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
             <button
               onClick={() => onTogglePin(msg.id)}
-              className={`p-0.5 rounded transition-colors ${
+              className={`p-1 rounded transition-colors ${
                 msg.isPinned
-                  ? 'text-amber-500 hover:text-amber-600 bg-amber-500/10'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  ? 'text-amber-700 bg-amber-100 border border-amber-300'
+                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-transparent hover:border-slate-200'
               }`}
               title={msg.isPinned ? t('chat.unpin_message') : t('chat.pin_message')}
             >
-              {msg.isPinned ? <Pin className="w-3.5 h-3.5 fill-amber-500" /> : <Pin className="w-3.5 h-3.5" />}
+              {msg.isPinned ? <Pin className="w-3.5 h-3.5 fill-amber-500 text-amber-700" /> : <Pin className="w-3.5 h-3.5" />}
             </button>
             <button
               onClick={handleStartEdit}
-              className="text-muted-foreground hover:text-foreground p-0.5 rounded hover:bg-muted transition-colors"
+              className="text-slate-500 hover:text-slate-800 p-1 rounded hover:bg-slate-100 border border-transparent hover:border-slate-200 transition-colors"
               title={t('chat.edit_message')}
             >
               <Edit2 className="w-3.5 h-3.5" />
@@ -568,7 +570,7 @@ const MessageItem: React.FC<MessageItemProps> = React.memo(({
             {!msg.isPinned && (
               <button
                 onClick={() => onDelete(msg.id)}
-                className="text-muted-foreground hover:text-destructive p-0.5 rounded hover:bg-muted transition-colors"
+                className="text-slate-500 hover:text-red-600 p-1 rounded hover:bg-red-50 border border-transparent hover:border-red-200 transition-colors"
                 title={t('chat.delete_message')}
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -579,27 +581,38 @@ const MessageItem: React.FC<MessageItemProps> = React.memo(({
 
         {isEditing ? (
           <div className="space-y-3 pt-1">
+            {/* Хинт-подсказка о сбросе последующей истории диалога */}
+            <div className="flex items-start gap-2.5 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-900 text-xs shadow-xs">
+              <span className="text-base shrink-0 leading-none">💡</span>
+              <div className="space-y-0.5">
+                <span className="font-bold text-amber-900">Сброс контекста до этого сообщения</span>
+                <p className="text-[11px] text-amber-800 leading-relaxed font-normal">
+                  При сохранении отредактированного сообщения последующая ветка диалога обрезается. Это предотвращает галлюцинации языковой модели, так как все дальнейшие ответы в чате опирались на первоначальный текст.
+                </p>
+              </div>
+            </div>
+
             <textarea
               value={editingContent}
               onChange={(e) => setEditingContent(e.target.value)}
               rows={6}
-              className="w-full bg-background border border-border rounded-lg p-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring font-mono"
+              className="w-full bg-white border border-slate-300 rounded-lg p-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono shadow-xs select-text"
             />
 
             {editingToolSteps.length > 0 && (
-              <div className="space-y-2 border border-border/60 rounded-lg p-3 bg-muted/20">
+              <div className="space-y-2 border border-slate-200 rounded-lg p-3 bg-slate-50">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                    <Wrench className="w-3.5 h-3.5 text-primary" />
+                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <Wrench className="w-3.5 h-3.5 text-blue-600" />
                     <span>{t('chat.tool_related_results', { count: editingToolSteps.length })}</span>
-                    <span className="text-foreground truncate bg-muted px-1 py-0.5 rounded border border-border/40">
+                    <span className="text-slate-700 truncate bg-white px-1.5 py-0.5 rounded border border-slate-200">
                       {t('chat.tokens', { count: countToolStepsTokens(editingToolSteps) })}
                     </span>
                   </span>
                   <button
                     type="button"
                     onClick={() => setEditingToolSteps([])}
-                    className="text-[10px] font-bold text-destructive hover:underline"
+                    className="text-[10px] font-bold text-red-600 hover:underline"
                   >
                     {t('chat.delete_all_results')}
                   </button>
@@ -607,22 +620,22 @@ const MessageItem: React.FC<MessageItemProps> = React.memo(({
                 
                 <div className="space-y-1.5 max-h-48 overflow-y-auto">
                   {editingToolSteps.map((step, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-2 bg-background border border-border/40 rounded-md text-[11px] font-mono">
+                    <div key={idx} className="flex items-center justify-between p-2 bg-white border border-slate-200 rounded-md text-[11px] font-mono shadow-2xs">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-muted-foreground font-bold shrink-0">#{idx + 1}</span>
-                        <span className="text-primary font-semibold shrink-0">{step.method}</span>
-                        <span className="text-foreground truncate bg-muted px-1 py-0.5 rounded border border-border/40">
+                        <span className="text-slate-400 font-bold shrink-0">#{idx + 1}</span>
+                        <span className="text-blue-600 font-semibold shrink-0">{step.method}</span>
+                        <span className="text-slate-700 truncate bg-slate-50 px-1 py-0.5 rounded border border-slate-200">
                           {step.path}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-foreground truncate bg-muted px-1 py-0.5 rounded border border-border/40">
+                        <span className="text-slate-600 truncate bg-slate-50 px-1 py-0.5 rounded border border-slate-200">
                           {t('chat.tokens', { count: countTokens("HUB_RESULT: " + JSON.stringify(step.result || step.error) || '') })}
                         </span>
                         <button
                           type="button"
                           onClick={() => setEditingToolSteps(editingToolSteps.filter((_, i) => i !== idx))}
-                          className="text-muted-foreground hover:text-destructive p-1 transition-colors"
+                          className="text-slate-400 hover:text-red-600 p-1 transition-colors"
                           title={t('chat.delete_step_result')}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -637,14 +650,14 @@ const MessageItem: React.FC<MessageItemProps> = React.memo(({
             <div className="flex items-center gap-2">
               <button
                 onClick={handleSave}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground text-xs font-semibold rounded-md hover:bg-primary/90 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-md hover:bg-blue-700 shadow-xs transition-colors cursor-pointer"
               >
                 <Check className="w-3.5 h-3.5" />
-                {t('chat.save')}
+                {t('chat.save')} (Сбросить последующие)
               </button>
               <button
                 onClick={() => setIsEditing(false)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-muted text-foreground text-xs font-semibold rounded-md hover:bg-muted/80 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold rounded-md hover:bg-slate-200 transition-colors cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
                 {t('chat.cancel')}
@@ -730,53 +743,6 @@ const MessageItem: React.FC<MessageItemProps> = React.memo(({
             )}
           </div>
         )}
-        
-        <div className="flex items-center justify-between select-none pt-1">
-          <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider" />
-          <div className="flex items-center gap-1.5 md:gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100 transition-opacity">
-            <span className="text-[10px] text-muted-foreground bg-background border border-border px-1.5 py-0.5 rounded font-mono">
-              {t('chat.tokens', { count: msg.tokens || 0 })}
-            </span>
-            <button
-              onClick={handleCopyMessage}
-              className={`p-0.5 rounded transition-colors ${
-                isCopied
-                  ? 'text-emerald-500 bg-emerald-500/10'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-              }`}
-              title={isCopied ? t('chat.copied_message') : t('chat.copy_message')}
-            >
-              {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-            </button>
-            <button
-              onClick={() => onTogglePin(msg.id)}
-              className={`p-0.5 rounded transition-colors ${
-                msg.isPinned
-                  ? 'text-amber-500 hover:text-amber-600 bg-amber-500/10'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-              }`}
-              title={msg.isPinned ? t('chat.unpin_message') : t('chat.pin_message')}
-            >
-              {msg.isPinned ? <Pin className="w-3.5 h-3.5 fill-amber-500" /> : <Pin className="w-3.5 h-3.5" />}
-            </button>
-            <button
-              onClick={handleStartEdit}
-              className="text-muted-foreground hover:text-foreground p-0.5 rounded hover:bg-muted transition-colors"
-              title={t('chat.edit_message')}
-            >
-              <Edit2 className="w-3.5 h-3.5" />
-            </button>
-            {!msg.isPinned && (
-              <button
-                onClick={() => onDelete(msg.id)}
-                className="text-muted-foreground hover:text-destructive p-0.5 rounded hover:bg-muted transition-colors"
-                title={t('chat.delete_message')}
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -1258,8 +1224,8 @@ export const ChatArea: React.FC = () => {
             </button>
 
             {isModelDropdownOpen && (
-              <div className="absolute top-full left-0 xl:left-auto right-0 mt-1.5 w-full xl:w-72 bg-popover border border-border rounded-lg shadow-xl z-50 flex flex-col overflow-hidden text-foreground animate-in fade-in-50 zoom-in-95 duration-150">
-                <div className="p-2 border-b border-border bg-card flex items-center gap-2">
+              <div className="absolute top-full left-0 xl:left-auto right-0 mt-1.5 w-full xl:w-72 bg-white border border-slate-200 rounded-lg shadow-xl z-50 flex flex-col overflow-hidden text-slate-900 animate-in fade-in-50 zoom-in-95 duration-150">
+                <div className="p-2 border-b border-slate-200 bg-slate-50 flex items-center gap-2">
                   <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                   <input
                     type="text"
@@ -1421,7 +1387,7 @@ export const ChatArea: React.FC = () => {
       {/* ПЛАВАЮЩИЙ НИЖНИЙ КОНТЕЙНЕР */}
       <div 
         ref={bottomOverlayRef}
-        className="absolute bottom-0 left-0 right-0 pointer-events-none flex flex-col items-center justify-end z-20 bg-gradient-to-t from-background via-background/80 to-transparent pt-6 pb-[env(safe-area-inset-bottom)] [@media(display-mode:standalone)]:pb-1"
+        className="absolute bottom-0 left-0 right-0 pointer-events-none flex flex-col items-center justify-end z-20 bg-gradient-to-t from-white via-white/80 to-transparent pt-6 pb-[env(safe-area-inset-bottom)] [@media(display-mode:standalone)]:pb-1"
       >
         {/* Стильная кнопка прокрутки вниз прямо над полем ввода */}
         {showScrollButton && (

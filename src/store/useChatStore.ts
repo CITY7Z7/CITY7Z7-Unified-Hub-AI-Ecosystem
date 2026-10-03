@@ -280,7 +280,7 @@ export const useChatStore = create<ChatStore>()(
       setMaxLoops: (maxLoops) => set({ maxLoops }),
       collapseCodeByDefault: true,
       collapseToolStepsByDefault: true,
-      theme: 'dark',
+      theme: 'light',
       fontSize: 'lg',
       setSystemPrompt: (systemPrompt) => set({ systemPrompt }),
       toolhubPromptTokens: 0,
@@ -290,12 +290,12 @@ export const useChatStore = create<ChatStore>()(
       setCollapseCodeByDefault: (collapseCodeByDefault) => set({ collapseCodeByDefault }),
       setCollapseToolStepsByDefault: (collapseToolStepsByDefault) => set({ collapseToolStepsByDefault }),
       setCollapseGraphmemSnippetsByDefault: (collapseGraphmemSnippetsByDefault) => set({ collapseGraphmemSnippetsByDefault }),
-      setTheme: (theme) => set({ theme }),
+      setTheme: () => set({ theme: 'light' }),
       setFontSize: (fontSize) => set({ fontSize }),
 
       toolhubEnabled: false,
       toolhubUrl: typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'http://localhost:3000',
-      toolhubPassword: '123',
+      toolhubPassword: '',
       setToolhubEnabled: (toolhubEnabled) => set({ toolhubEnabled }),
       setToolhubUrl: (toolhubUrl) => set({ toolhubUrl }),
       setToolhubPassword: (toolhubPassword) => set({ toolhubPassword }),
@@ -1158,16 +1158,31 @@ export const useChatStore = create<ChatStore>()(
 
       editMessage: async (messageId, newContent, newToolSteps) => {
         const msg = await db.messages.get(messageId);
+        if (!msg) return;
         const steps = newToolSteps !== undefined ? newToolSteps : (msg?.toolSteps || []);
         const tokenizer = get().tokenizerType;
         
+        // Сброс последующих сообщений до редактируемого для предотвращения галлюцинаций модели:
+        // Все последующие ответы модели были сформированы на старый контекст и становятся невалидными.
+        if (msg.chatId) {
+          const subsequentMsgs = await db.messages
+            .where('chatId')
+            .equals(msg.chatId)
+            .filter((m) => m.timestamp > msg.timestamp && m.id !== messageId)
+            .toArray();
+
+          for (const subMsg of subsequentMsgs) {
+            await db.messages.delete(subMsg.id);
+          }
+        }
+
         await db.messages.update(messageId, {
           content: newContent,
           toolSteps: steps,
           tokens: countTokens(newContent, tokenizer) + countToolStepsTokens(steps, tokenizer),
         });
 
-        if (msg?.chatId) {
+        if (msg.chatId) {
           await db.chats.update(msg.chatId, { updatedAt: Date.now() });
           await recalculateChatTokens(msg.chatId, tokenizer);
         }

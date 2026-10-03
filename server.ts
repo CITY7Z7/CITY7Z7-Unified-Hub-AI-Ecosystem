@@ -61,27 +61,12 @@ const normalizePath = (p: string): string => {
   return withLeading.replace(/\/+$/, '') || '/';
 };
 
-const checkAgentAuth = async (req: Request, res: Response): Promise<boolean> => {
-  const settings = await prisma.systemSetting.findFirst();
-  const validSecret = settings?.agentSecret || '123';
-  const provided = req.headers['x-agent-password'];
-
-  if (!provided || provided !== validSecret) {
-    res.status(401).json({ error: 'Unauthorized: Invalid Agent Password' });
-    return false;
-  }
+// Открытый доступ для домашнего ПК: пароли полностью вырезаны
+const checkAgentAuth = async (_req: Request, _res: Response): Promise<boolean> => {
   return true;
 };
 
-const checkAdminAuth = async (req: Request, res: Response): Promise<boolean> => {
-  const settings = await prisma.systemSetting.findFirst();
-  const validPassword = settings?.adminPassword || 'admin';
-  const provided = req.headers['x-admin-password'];
-
-  if (!provided || provided !== validPassword) {
-    res.status(401).json({ error: 'Unauthorized: Invalid Admin Password' });
-    return false;
-  }
+const checkAdminAuth = async (_req: Request, _res: Response): Promise<boolean> => {
   return true;
 };
 
@@ -209,17 +194,9 @@ app.get('/prompt', async (req: Request, res: Response) => {
   res.json({ prompt: formattedPrompt });
 });
 
-// 2. АДМИНИСТРАТИВНЫЙ API
-app.post('/admin/api/auth/verify', async (req: Request, res: Response) => {
-  const { password } = req.body || {};
-  const settings = await prisma.systemSetting.findFirst();
-  const validPassword = settings?.adminPassword || 'admin';
-
-  if (password === validPassword) {
-    res.json({ success: true });
-  } else {
-    res.status(401).json({ error: 'Invalid admin password' });
-  }
+// 2. АДМИНИСТРАТИВНЫЙ API (Всегда открыт для домашнего ПК)
+app.post('/admin/api/auth/verify', async (_req: Request, res: Response) => {
+  res.json({ success: true, message: 'Open access for home PC' });
 });
 
 app.get('/admin/api/settings', async (req: Request, res: Response) => {

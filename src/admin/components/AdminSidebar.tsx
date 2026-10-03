@@ -87,54 +87,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, onOpenSettings }) =>
   return (
     <div className="w-80 bg-card border-r border-border flex flex-col h-full text-foreground select-none shrink-0 transition-all duration-300 ease-in-out relative">
       {/* Шапка боковой панели */}
-      <div className="h-[74.4px] min-h-[74.4px] max-h-[74.4px] px-5 border-b border-border flex items-center justify-between shrink-0 min-w-[320px] box-border">
+      <div className="h-[52px] min-h-[52px] max-h-[52px] px-4 border-b border-border flex items-center justify-between shrink-0 bg-white">
         <div className="flex items-center gap-2">
-          <span className="font-bold text-xl tracking-tight text-foreground">
-            🛠️ toolhub
+          <span className="font-bold text-base tracking-tight text-foreground">
+            🛠️ ToolHub Skills
           </span>
         </div>
         <div className="flex items-center gap-1">
-          <a
-            href={settings.githubUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent hover:border-border transition-all"
-            title={t('sidebar.github_repo')}
-          >
-            <img 
-              src={theme === 'dark' ? 'GitHub_Invertocat_White.svg' : 'GitHub_Invertocat_Black.svg'} 
-              className="w-4 h-4" 
-              alt="GitHub"
-            />
-          </a>
-
-          {/* Языковой селектор */}
-          <div 
-            className="relative p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent hover:border-border transition-all cursor-pointer"
-            title="Change language / Сменить язык / 切换语言"
-          >
-            <Languages className="w-4 h-4 shrink-0" />
-            <select
-              value={lang}
-              onChange={(e) => setLang(e.target.value as any)}
-              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-              title="Change language / Сменить язык / 切换语言"
-            >
-              <option value="en" className="bg-card text-foreground font-sans">English</option>
-              <option value="ru" className="bg-card text-foreground font-sans">Русский</option>
-              <option value="zh" className="bg-card text-foreground font-sans">中文 (简体)</option>
-            </select>
-          </div>
-
-          {/* Переключатель темы */}
-          <button
-            onClick={toggleTheme}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent hover:border-border transition-all"
-            title={theme === 'dark' ? t('sidebar.theme_light') : t('sidebar.theme_dark')}
-          >
-            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
-
           {/* Кнопка открытия модалки настроек */}
           <button
             onClick={onOpenSettings}
@@ -142,15 +101,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, onOpenSettings }) =>
             title={t('nav.settings') || "Settings"}
           >
             <SettingsIcon className="w-4 h-4" />
-          </button>
-
-          {/* Выход */}
-          <button
-            onClick={onLogout}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 border border-transparent hover:border-destructive/20 transition-all"
-            title={t('nav.logout')}
-          >
-            <LogOut className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -282,23 +232,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, onOpenSettings }) =>
       )}
  */}
       {/* Футер боковой панели */}
-      <div className="p-4 border-t border-border bg-card text-[10px] text-muted-foreground flex justify-between items-center min-w-[320px]">
+      <div className="p-3 border-t border-border bg-slate-50 text-[11px] text-muted-foreground flex justify-between items-center">
         <span>{t('sidebar.total_tools', { count: totalTools })}</span>
-        <a
-          href={settings.githubUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:text-foreground transition-colors font-semibold flex items-center gap-1.5"
-        >
-          <img 
-            src={theme === 'dark' ? 'GitHub_Invertocat_White.svg' : 'GitHub_Invertocat_Black.svg'} 
-            className="w-3.5 h-3.5" 
-            alt="GitHub"
-          />
-          <span>GitHub</span>
-        </a>
         <span 
-          className="px-1.5 py-0.5 rounded-md font-mono text-[11px] font-bold bg-green-500/10 text-green-500 border border-green-500/30 tracking-tight"
+          className="px-2 py-0.5 rounded-md font-mono text-[11px] font-bold bg-green-50 text-green-700 border border-green-300 tracking-tight"
         >
           v{packageJson.version}
         </span>
