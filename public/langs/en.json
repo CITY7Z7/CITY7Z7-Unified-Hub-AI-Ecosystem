@@ -559,7 +559,7 @@
   "title.prompt": "Create a very short and concise title (no more than 3-4 words) for the dialogue based on the user's message: \"{content}\". Write ONLY the chat title in English, without quotes, prefixes, or extra words. Emojis can be used. Reflect what the conversation is about.",
   "system.default": "You are a helpful assistant, an experienced programmer. Always provide clean, efficient, and well-documented code.",
   "context.disable_think": "Disable reasoning (/set nothink)",
-  "context.disable_think_desc": "Passes think: false to Ollama API, forcing the model to respond directly without generating <think>",
+  "context.disable_think_desc": "Passes think: false to API, forcing the model to respond directly without generating <think>",
   "context.disable_think_title": "Reasoning (think) disabled",
   "context.temp_changed": "Temperature changed",
   "context.top_p_changed": "Top-P changed",

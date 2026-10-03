@@ -181,7 +181,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, onOpenSettings }) =>
       </div>
 
       {/* Баннерная бесконечная карусель */}
-      {banners.length > 0 && (
+{/*       {banners.length > 0 && (
         <div
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
@@ -280,7 +280,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, onOpenSettings }) =>
           </div>
         </div>
       )}
-
+ */}
       {/* Футер боковой панели */}
       <div className="p-4 border-t border-border bg-card text-[10px] text-muted-foreground flex justify-between items-center min-w-[320px]">
         <span>{t('sidebar.total_tools', { count: totalTools })}</span>
