@@ -164,22 +164,27 @@ export class VoiceEngine {
     return chunks.slice(0, 15);
   }
 
-  // Озвучка через локальный Web Speech API при исчерпании лимитов Groq
+  // Озвучка через локальный Web Speech API при исчерпании лимитов Groq или отсутствии внешнего сервера
   private fallbackWebSpeech(chunkText: string): Promise<void> {
     return new Promise((resolve) => {
-      if (this.isPlaybackCancelled || !('speechSynthesis' in window)) {
+      if (this.isPlaybackCancelled || typeof window === 'undefined' || !('speechSynthesis' in window)) {
         resolve();
         return;
       }
 
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(chunkText);
-      utterance.rate = this.playbackRate;
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(chunkText);
+        utterance.rate = Math.max(0.7, Math.min(2.0, this.playbackRate || 1.0));
+        utterance.lang = /[а-яА-ЯёЁ]/.test(chunkText) ? 'ru-RU' : 'en-US';
 
-      utterance.onend = () => resolve();
-      utterance.onerror = () => resolve();
+        utterance.onend = () => resolve();
+        utterance.onerror = () => resolve();
 
-      window.speechSynthesis.speak(utterance);
+        window.speechSynthesis.speak(utterance);
+      } catch {
+        resolve();
+      }
     });
   }
 
@@ -195,9 +200,17 @@ export class VoiceEngine {
 
     const storeState = useChatStore.getState();
     const effectiveApiKey = (apiKey && apiKey.trim()) ? apiKey.trim() : (storeState.ttsApiKey || '');
-    const effectiveBaseUrl = (baseUrl && baseUrl.trim()) ? baseUrl.trim() : (storeState.ttsBaseUrl || 'http://localhost:8880/v1');
+    const effectiveBaseUrl = (baseUrl && baseUrl.trim()) ? baseUrl.trim() : (storeState.ttsBaseUrl || '');
     const effectiveModel = (model && model.trim()) ? model.trim() : (storeState.groqTtsModel || 'kokoro');
     const effectiveVoice = (voice && voice.trim()) ? voice.trim() : (storeState.groqTtsVoice || 'sveta');
+
+    // Если нет ключа API или адрес явно локальный/пустой при работе в облачном окружении, сразу используем качественный Web Speech API
+    const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+    const isLocalhost = !effectiveBaseUrl || effectiveBaseUrl.includes('localhost') || effectiveBaseUrl.includes('127.0.0.1');
+
+    if (!effectiveApiKey && (isLocalhost || !effectiveBaseUrl || isHttps)) {
+      return () => this.fallbackWebSpeech(chunkText);
+    }
 
     const rawBase = effectiveBaseUrl.replace(/\/+$/, '');
     const targetUrl = rawBase.endsWith('/audio/speech') ? rawBase : `${rawBase}/audio/speech`;
@@ -210,6 +223,9 @@ export class VoiceEngine {
         headers['Authorization'] = `Bearer ${effectiveApiKey.trim()}`;
       }
 
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const timeoutId = controller ? setTimeout(() => controller.abort(), 5000) : null;
+
       const response = await fetch(targetUrl, {
         method: 'POST',
         headers,
@@ -219,15 +235,12 @@ export class VoiceEngine {
           input: chunkText,
           response_format: 'wav',
         }),
+        signal: controller ? controller.signal : undefined,
       });
 
+      if (timeoutId) clearTimeout(timeoutId);
+
       if (!response.ok || this.isPlaybackCancelled) {
-        if (response.status === 429) {
-          console.warn('[TTS Rate Limit] Переключаемся на браузерный WebSpeech Fallback.');
-        } else {
-          const errData = await response.json().catch(() => ({}));
-          console.error('[TTS Error Details]:', errData);
-        }
         return () => this.fallbackWebSpeech(chunkText);
       }
 
@@ -238,8 +251,8 @@ export class VoiceEngine {
       const audio = new Audio(audioUrl);
       audio.preload = 'auto';
       return audio;
-    } catch (e) {
-      console.error('[Fetch Audio Error]:', e);
+    } catch {
+      // При сетевой ошибке или недоступности удалённого сервера плавно переключаемся на браузерный Web Speech API
       return () => this.fallbackWebSpeech(chunkText);
     }
   }
@@ -330,6 +343,9 @@ export class VoiceEngine {
     if (this.currentAudio) {
       this.currentAudio.pause();
       this.currentAudio = null;
+    }
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
     }
   }
 }

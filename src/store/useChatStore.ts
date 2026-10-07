@@ -521,8 +521,9 @@ export const useChatStore = create<ChatStore>()(
           const mod = await import('../lib/graphmemSdk');
           const GraphMemSDK = mod.GraphMemSDK || mod.default;
           const effectiveToken = chat.graphmemToken || get().graphmemGlobalToken;
+          const targetBase = chat.graphmemUrl || (typeof window !== 'undefined' && window.location.protocol === 'https:' ? `${window.location.origin}/api` : 'http://localhost:3000/api');
           graphmemSdk = new GraphMemSDK({
-            baseURL: chat.graphmemUrl || 'http://localhost:3000/api',
+            baseURL: targetBase,
             token: effectiveToken
           });
 
@@ -534,7 +535,7 @@ export const useChatStore = create<ChatStore>()(
                 await db.chats.update(chatId, { graphmemDialogId });
               }
             } catch (err) {
-              console.error('Failed to auto-create GraphMem dialog:', err);
+              console.warn('Failed to auto-create GraphMem dialog:', err);
             }
           }
         }
@@ -552,7 +553,7 @@ export const useChatStore = create<ChatStore>()(
                 graphmemContextSnippet = retrieveRes.contextSnippets.trim();
               }
             } catch (err) {
-              console.error('Failed to retrieve GraphMem context:', err);
+              console.warn('Failed to retrieve GraphMem context:', err);
             } finally {
               set({ isRetrievingGraphmem: false });
             }
@@ -565,7 +566,7 @@ export const useChatStore = create<ChatStore>()(
                 'USER',
                 false, 
                 false
-              ).catch((e: any) => console.error('GraphMem user ingest error:', e));
+              ).catch((e: any) => console.warn('GraphMem user ingest error:', e));
             }
           }
 
@@ -978,7 +979,7 @@ export const useChatStore = create<ChatStore>()(
                   'ASSISTANT',
                   chat.graphmemMindSurf ?? false,
                   false
-                ).catch((e: any) => console.error('GraphMem assistant ingest error:', e));
+                ).catch((e: any) => console.warn('GraphMem assistant ingest error:', e));
               }
             }
           }
@@ -1031,7 +1032,7 @@ export const useChatStore = create<ChatStore>()(
 
                     if (isGraphmemActive && graphmemSdk && graphmemDialogId) {
                       graphmemSdk.updateDialog(graphmemDialogId, cleanTitle).catch((e: any) => 
-                        console.error('Failed to sync updated title with GraphMem:', e)
+                        console.warn('Failed to sync updated title with GraphMem:', e)
                       );
                     }
                   }

@@ -192,14 +192,16 @@ export const ContextSidebar: React.FC = () => {
     try {
       const mod = await import('../lib/graphmemSdk');
       const GraphMemSDK = mod.GraphMemSDK || mod.default;
+      const targetBase = currentChat?.graphmemUrl?.trim() || 
+        (typeof window !== 'undefined' && window.location.protocol === 'https:' ? `${window.location.origin}/api` : 'http://localhost:3000/api');
       const sdk = new GraphMemSDK({
-        baseURL: currentChat?.graphmemUrl || 'http://localhost:3000/api',
+        baseURL: targetBase,
         token: graphmemGlobalToken || currentChat?.graphmemToken,
       });
       const list = await sdk.getDialogs();
       setGraphmemDialogs(Array.isArray(list) ? list : []);
-    } catch (e) {
-      console.error('Failed to fetch GraphMem dialogs:', e);
+    } catch {
+      setGraphmemDialogs([]);
     } finally {
       setIsLoadingDialogs(false);
     }
@@ -1033,8 +1035,9 @@ export const ContextSidebar: React.FC = () => {
                                 try {
                                   const mod = await import('../lib/graphmemSdk');
                                   const GraphMemSDK = mod.GraphMemSDK || mod.default;
+                                  const targetBase = currentChat.graphmemUrl || (typeof window !== 'undefined' && window.location.protocol === 'https:' ? `${window.location.origin}/api` : 'http://localhost:3000/api');
                                   const sdk = new GraphMemSDK({
-                                    baseURL: currentChat.graphmemUrl || 'http://localhost:3000/api',
+                                    baseURL: targetBase,
                                     token: graphmemGlobalToken || currentChat.graphmemToken,
                                   });
                                   const created = await sdk.createDialog(currentChat.title || t('context.graphmem_default_title'));
@@ -1060,8 +1063,9 @@ export const ContextSidebar: React.FC = () => {
                                   try {
                                     const mod = await import('../lib/graphmemSdk');
                                     const GraphMemSDK = mod.GraphMemSDK || mod.default;
+                                    const targetBase = currentChat.graphmemUrl || (typeof window !== 'undefined' && window.location.protocol === 'https:' ? `${window.location.origin}/api` : 'http://localhost:3000/api');
                                     const sdk = new GraphMemSDK({
-                                      baseURL: currentChat.graphmemUrl || 'http://localhost:3000/api',
+                                      baseURL: targetBase,
                                       token: graphmemGlobalToken || currentChat.graphmemToken,
                                     });
                                     await sdk.deleteDialog(currentChat.graphmemDialogId!);

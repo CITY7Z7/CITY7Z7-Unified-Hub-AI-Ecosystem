@@ -120,7 +120,10 @@ export class GraphMem {
   token?: string;
 
   constructor(config: GraphMemConfig = {}) {
-    this.baseURL = (config.baseURL || 'http://localhost:3000/api').replace(/\/+$/, '');
+    const defaultBase = typeof window !== 'undefined' && window.location.protocol === 'https:'
+      ? `${window.location.origin}/api`
+      : 'http://localhost:3000/api';
+    this.baseURL = (config.baseURL || defaultBase).replace(/\/+$/, '');
     this.token = config.token;
   }
 
@@ -151,21 +154,24 @@ export class GraphMem {
       headers['Content-Type'] = 'application/json';
     }
 
-    const response = await fetch(url, {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : null
-    });
+    let response: Response;
+    try {
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const timeoutId = controller ? setTimeout(() => controller.abort(), 4000) : null;
+      response = await fetch(url, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : null,
+        signal: controller ? controller.signal : undefined
+      });
+      if (timeoutId) clearTimeout(timeoutId);
+    } catch {
+      // Сервер GraphMem недоступен или оффлайн в данном окружении
+      return null;
+    }
 
     if (!response.ok) {
-      let errDetail = '';
-      try {
-        const text = await response.text();
-        errDetail = text || response.statusText;
-      } catch {
-        errDetail = response.statusText;
-      }
-      throw new Error(`[HTTP ${response.status}] ${method} ${path} -> ${errDetail}`);
+      return null;
     }
 
     const text = await response.text();
@@ -178,7 +184,8 @@ export class GraphMem {
   }
 
   async retrieveContext(dialogId: string, query: string, freezeGraph: boolean = false): Promise<RetrieveContextResponse> {
-    return this._request(`/dialogs/${dialogId}/retrieve`, 'POST', { q: query, freezeGraph });
+    const res = await this._request(`/dialogs/${dialogId}/retrieve`, 'POST', { q: query, freezeGraph });
+    return res || { contextSnippets: '', fragments: [] };
   }
 
   async ingestRawData(
@@ -188,16 +195,18 @@ export class GraphMem {
     mindSurf: boolean = false,
     saveToDb: boolean = false
   ): Promise<IngestResponse> {
-    return this._request(`/dialogs/${dialogId}/ingest`, 'POST', {
+    const res = await this._request(`/dialogs/${dialogId}/ingest`, 'POST', {
       content,
       role,
       mindSurf,
       saveToDb
     });
+    return res || { message: 'offline', messageId: null };
   }
 
   async getDialogs(): Promise<Dialog[]> {
-    return this._request('/dialogs', 'GET');
+    const res = await this._request('/dialogs', 'GET');
+    return Array.isArray(res) ? res : [];
   }
 
   async createDialog(message?: string): Promise<Dialog> {

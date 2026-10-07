@@ -244,15 +244,16 @@ export const Sidebar: React.FC<SidebarProps> = () => {
           const mod = await import('../lib/graphmemSdk');
           const GraphMemSDK = mod.GraphMemSDK || mod.default;
           const globalToken = useChatStore.getState().graphmemGlobalToken;
+          const targetBase = chat.graphmemUrl || (typeof window !== 'undefined' && window.location.protocol === 'https:' ? `${window.location.origin}/api` : 'http://localhost:3000/api');
           const sdk = new GraphMemSDK({
-            baseURL: chat.graphmemUrl || 'http://localhost:3000/api',
+            baseURL: targetBase,
             token: globalToken || chat.graphmemToken,
           });
           if (chat.graphmemDialogId) {
             await sdk.deleteDialog(chat.graphmemDialogId);
           }
         } catch (err) {
-          console.error('Failed to delete GraphMem dialog on chat delete:', err);
+          console.warn('Failed to delete GraphMem dialog on chat delete:', err);
         }
       }
       await db.chats.delete(id);
@@ -287,8 +288,9 @@ export const Sidebar: React.FC<SidebarProps> = () => {
             const mod = await import('../lib/graphmemSdk');
             const GraphMemSDK = mod.GraphMemSDK || mod.default;
             const globalToken = useChatStore.getState().graphmemGlobalToken;
+            const targetBase = chat.graphmemUrl || (typeof window !== 'undefined' && window.location.protocol === 'https:' ? `${window.location.origin}/api` : 'http://localhost:3000/api');
             const sdk = new GraphMemSDK({
-              baseURL: chat.graphmemUrl || 'http://localhost:3000/api',
+              baseURL: targetBase,
               token: globalToken || chat.graphmemToken,
             });
             await Promise.race([
@@ -296,7 +298,7 @@ export const Sidebar: React.FC<SidebarProps> = () => {
               new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
             ]);
           } catch (err) {
-            console.error('Failed to update GraphMem dialog title on rename:', err);
+            console.warn('Failed to update GraphMem dialog title on rename:', err);
           }
         }
       }
