@@ -199,9 +199,11 @@ export async function callMcpPooled(
       reject: (e) => { clearTimeout(timeout); reject(e); },
     });
 
-    entry!.process.stdin.write(
-      JSON.stringify({ jsonrpc: "2.0", id: requestId, ...request }) + "\n"
-    );
+    if (entry!.process.stdin) {
+      entry!.process.stdin.write(
+        JSON.stringify({ jsonrpc: "2.0", id: requestId, ...request }) + "\n"
+      );
+    }
   });
 }
 

@@ -1,7 +1,7 @@
 // bench.ts
 // HUB_URL=http://localhost:3000 AGENT_PASS=123 bun run bench.ts
 
-import { HubSDK } from '../../SDK/JS/sdk';
+import { HubSDK } from '../../packages/sdk/src/index.ts';
 
 const HUB_URL = process.env.HUB_URL || 'http://localhost:3000';
 const AGENT_PASS = process.env.AGENT_PASS || '123';

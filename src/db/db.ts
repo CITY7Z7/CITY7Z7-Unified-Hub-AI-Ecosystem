@@ -37,6 +37,7 @@ export interface Chat {
   topP?: number;
   frequencyPenalty?: number;
   presencePenalty?: number;
+  disableThink?: boolean;
 }
 
 export interface ToolStep {

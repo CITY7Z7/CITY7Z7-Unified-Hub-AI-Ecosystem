@@ -88,7 +88,7 @@ const logExecution = async (params: {
         durationMs: params.durationMs,
         success: params.success,
         payload: safeStringifyJson(params.payload, '{}'),
-        result: safeStringifyJson(params.result, null),
+        result: safeStringifyJson(params.result, '{}'),
         error: params.error || null,
         callerIp: params.callerIp || '127.0.0.1'
       }

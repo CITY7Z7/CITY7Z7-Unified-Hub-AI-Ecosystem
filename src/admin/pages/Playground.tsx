@@ -39,7 +39,6 @@ export function Playground() {
   };
 
   const [hostUrl, setHostUrl] = useState(getTargetUrl());
-  const [password, setPassword] = useState("123");
   const [allPaths, setAllPaths] = useState<HubCategoryPath[]>([]);
   const [loading, setLoading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
@@ -65,13 +64,12 @@ export function Playground() {
     return result;
   };
 
-  const syncNode = async (overrideUrl?: string, overridePass?: string) => {
+  const syncNode = async (overrideUrl?: string) => {
     const targetUrl = overrideUrl ?? hostUrl;
-    const targetPass = overridePass ?? password;
     setIsScanning(true);
 
     try {
-      const sdk = new HubSDK(targetUrl, targetPass);
+      const sdk = new HubSDK(targetUrl);
       const paths = await scanAllPaths(sdk, "/");
       if (paths.length > 0) {
         setAllPaths(paths);
@@ -89,14 +87,7 @@ export function Playground() {
   };
 
   useEffect(() => {
-    fetch("/admin/api/settings")
-      .then(res => res.json())
-      .then(data => {
-        const secret = data?.agentSecret || "123";
-        setPassword(secret);
-        syncNode(hostUrl, secret);
-      })
-      .catch(() => syncNode(hostUrl, "123"));
+    syncNode(hostUrl);
   }, []);
 
   const formatJson = (data: any): string => {
@@ -126,7 +117,7 @@ export function Playground() {
   useEffect(() => {
     if (actionType !== "call") return;
 
-    const sdk = new HubSDK(hostUrl, password);
+    const sdk = new HubSDK(hostUrl);
     sdk.listTools(selectedPath).then(res => {
       if (res && Array.isArray(res.tools)) {
         setPathTools(res.tools);
@@ -134,7 +125,7 @@ export function Playground() {
         setPathTools([]);
       }
     }).catch(() => setPathTools([]));
-  }, [selectedPath, actionType, hostUrl, password]);
+  }, [selectedPath, actionType, hostUrl]);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -189,7 +180,7 @@ export function Playground() {
     setMessages(prev => [...prev, agentMsg]);
 
     try {
-      const sdk = new HubSDK(hostUrl, password);
+      const sdk = new HubSDK(hostUrl);
       const res = await sdk.processAgentResponse(finalTag);
       const durationMs = Date.now() - startTime;
 
@@ -231,13 +222,6 @@ export function Playground() {
               onChange={e => setHostUrl(e.target.value)} 
               placeholder="http://localhost:3000"
               className="bg-transparent border-b border-purple-500 focus:outline-none w-44 text-xs font-mono text-foreground"
-            />
-            <span className="text-muted-foreground text-[10px] uppercase font-bold tracking-tight ml-2">{t("play.pass_label")}</span>
-            <input 
-              type="password" 
-              value={password} 
-              onChange={e => setPassword(e.target.value)} 
-              className="bg-transparent border-b border-purple-500 focus:outline-none w-20 text-xs font-bold text-foreground"
             />
             <Button size="sm" variant="ghost" onClick={() => syncNode()} disabled={isScanning} className="h-6 px-2 text-[10px] text-purple-600 dark:text-purple-400 font-bold hover:bg-purple-500/10 rounded">
               {isScanning ? t("play.fetching_paths") : t("play.sync_btn")}

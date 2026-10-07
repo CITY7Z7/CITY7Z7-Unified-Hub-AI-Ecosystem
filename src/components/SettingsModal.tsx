@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, Plus, Trash2, CheckCircle2, AlertCircle, Play, Settings, 
-  Server, Bot, Palette, Database, Key, Download, Upload, Edit3, Check, RefreshCw 
+  Server, Bot, Palette, Database, Download, Upload, Check, RefreshCw,
+  Mic, Volume2, ExternalLink, Sparkles, Headphones, Key, Edit3
 } from 'lucide-react';
 import { useChatStore } from '../store/useChatStore';
+import { globalVoiceEngine } from '../lib/voiceEngine';
 import { type Provider } from '../db/db';
 import { useTranslation } from '../lib/i18n';
 
@@ -12,7 +14,7 @@ interface SettingsModalProps {
   onClose: () => void;
 }
 
-type TabType = 'providers' | 'agent' | 'appearance' | 'backup';
+type TabType = 'providers' | 'agent' | 'voice' | 'appearance' | 'backup';
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const { t, lang, setLang } = useTranslation();
@@ -41,9 +43,38 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     setMinGroupSize,
     exportBackup,
     importBackup,
+    voiceInputEnabled,
+    setVoiceInputEnabled,
+    autoTtsEnabled,
+    setAutoTtsEnabled,
+    sttApiKey,
+    setSttApiKey,
+    ttsApiKey,
+    setTtsApiKey,
+    sttBaseUrl,
+    setSttBaseUrl,
+    sttModel,
+    setSttModel,
+    ttsBaseUrl,
+    setTtsBaseUrl,
+    groqTtsModel,
+    setGroqTtsModel,
+    groqTtsVoice,
+    setGroqTtsVoice,
+    voiceHotkeyEnabled,
+    setVoiceHotkeyEnabled,
+    voiceHotkey,
+    setVoiceHotkey,
+    voiceAppendToInput,
+    setVoiceAppendToInput,
+    ttsSpeed,
+    setTtsSpeed,
   } = useChatStore();
 
   const [activeTab, setActiveTab] = useState<TabType>('providers');
+  const [ttsTestState, setTtsTestState] = useState<'idle' | 'playing'>('idle');
+  const [micTestState, setMicTestState] = useState<'idle' | 'recording' | 'transcribing' | 'success'>('idle');
+  const [micTestText, setMicTestText] = useState('');
 
   // Уведомления PWA
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(
@@ -208,21 +239,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 md:p-4 animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 md:p-4 animate-fade-in"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-background border-0 md:border md:border-border rounded-none md:rounded-xl w-full max-w-4xl h-full md:h-[85vh] flex flex-col shadow-2xl overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
+      <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-4xl h-full md:h-[85vh] flex flex-col shadow-2xl overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] text-slate-900">
         {/* Шапка */}
-        <div className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 border-b border-border bg-card shrink-0 select-none">
-          <div className="flex items-center gap-2">
-            <Settings className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-            <h2 className="text-base md:text-lg font-bold text-foreground">{t('settings.title')}</h2>
+        <div className="flex items-center justify-between px-4 md:px-6 py-3.5 border-b border-slate-200 bg-slate-50 shrink-0 select-none">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 bg-blue-100 rounded-lg text-blue-600">
+              <Settings className="w-4 h-4 md:w-5 md:h-5" />
+            </div>
+            <h2 className="text-base md:text-lg font-bold text-slate-900">{t('settings.title')}</h2>
           </div>
           <button
             onClick={onClose}
-            className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-lg hover:bg-muted cursor-pointer"
+            className="text-slate-400 hover:text-slate-700 transition-colors p-1.5 rounded-lg hover:bg-slate-200 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -230,13 +263,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
         <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
           {/* Сайбар вкладок */}
-          <div className="w-full md:w-60 bg-card border-b md:border-b-0 md:border-r border-border p-2 md:p-3 flex flex-row md:flex-col gap-1 md:gap-1.5 overflow-x-auto no-scrollbar shrink-0 select-none">
+          <div className="w-full md:w-60 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-200 p-2 md:p-3 flex flex-row md:flex-col gap-1 md:gap-1.5 overflow-x-auto no-scrollbar shrink-0 select-none">
             <button
               onClick={() => setActiveTab('providers')}
               className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors shrink-0 cursor-pointer ${
                 activeTab === 'providers'
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
               }`}
             >
               <Server className="w-3.5 h-3.5 md:w-4 md:h-4" />
@@ -247,8 +280,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               onClick={() => setActiveTab('agent')}
               className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors shrink-0 cursor-pointer ${
                 activeTab === 'agent'
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
               }`}
             >
               <Bot className="w-3.5 h-3.5 md:w-4 md:h-4" />
@@ -256,11 +289,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
             </button>
 
             <button
+              onClick={() => setActiveTab('voice')}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors shrink-0 cursor-pointer ${
+                activeTab === 'voice'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              }`}
+            >
+              <Mic className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              <span>Голос (Voice Engine)</span>
+            </button>
+
+            <button
               onClick={() => setActiveTab('appearance')}
               className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors shrink-0 cursor-pointer ${
                 activeTab === 'appearance'
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
               }`}
             >
               <Palette className="w-3.5 h-3.5 md:w-4 md:h-4" />
@@ -271,8 +316,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               onClick={() => setActiveTab('backup')}
               className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors shrink-0 cursor-pointer ${
                 activeTab === 'backup'
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
               }`}
             >
               <Database className="w-3.5 h-3.5 md:w-4 md:h-4" />
@@ -281,7 +326,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           </div>
 
           {/* Контент вкладок */}
-          <div className="flex-1 p-3.5 md:p-6 overflow-y-auto bg-background text-foreground">
+          <div className="flex-1 p-3.5 md:p-6 overflow-y-auto bg-white text-slate-900">
             {/* ВКЛАДКА 1: ПРОВАЙДЕРЫ */}
             {activeTab === 'providers' && (
               <div className="space-y-6">
@@ -601,7 +646,243 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               </div>
             )}
 
-            {/* ВКЛАДКА 2: АГЕНТ И МОДЕЛЬ */}
+            {/* ВКЛАДКА: ГОЛОСОВОЙ ДВИЖОК (VOICE ENGINE GROQ WHISPER + ORPHEUS/KOKORO TTS) */}
+            {activeTab === 'voice' && (
+              <div className="space-y-6">
+                {/* Вводная инструкция */}
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl space-y-2 text-slate-800">
+                  <div className="flex items-center gap-2 font-bold text-blue-900 text-sm">
+                    <Sparkles className="w-4 h-4 text-blue-600" />
+                    <span>Руководство: Как работает Voice Engine (STT + TTS)</span>
+                  </div>
+                  <div className="text-xs space-y-1.5 leading-relaxed text-slate-700">
+                    <p>
+                      <strong>1. Распознавание речи (STT — Groq Whisper):</strong> Браузер захватывает ваш голос через микрофон и отправляет аудиозапись на молниеносный сервер Groq (модель <code>whisper-large-v3</code>). Распознанный текст мгновенно попадает в поле ввода чата.
+                    </p>
+                    <p>
+                      <strong>2. Озвучивание ответов (TTS — Orpheus / Kokoro):</strong> По мере генерации ответов модели текст очищается от Markdown и кода и передается на аудио-эндпоинт. Если сторонний TTS сервер не настроен, система автоматически использует встроенный голос вашего браузера (Web Speech API).
+                    </p>
+                    <p className="flex items-center gap-1 text-blue-700 font-semibold pt-1">
+                      <span>Где взять бесплатный ключ Groq API:</span>
+                      <a 
+                        href="https://console.groq.com/keys" 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="underline flex items-center gap-0.5 hover:text-blue-900"
+                      >
+                        console.groq.com/keys <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Основные переключатели */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-semibold text-slate-900">Голосовой ввод (STT)</div>
+                      <div className="text-[11px] text-slate-500">Активирует кнопку микрофона и хоткей</div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={voiceInputEnabled}
+                      onChange={(e) => setVoiceInputEnabled(e.target.checked)}
+                      className="h-4.5 w-4.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    />
+                  </div>
+
+                  <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-semibold text-slate-900">Авто-озвучка ответов (TTS)</div>
+                      <div className="text-[11px] text-slate-500">Автоматически зачитывать ответы модели</div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={autoTtsEnabled}
+                      onChange={(e) => setAutoTtsEnabled(e.target.checked)}
+                      className="h-4.5 w-4.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                {/* Настройки Groq Whisper STT */}
+                <div className="space-y-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <Mic className="w-4 h-4 text-blue-600" />
+                    <span>Настройки Whisper STT (Groq Cloud)</span>
+                  </h4>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-600 uppercase">
+                      Groq API Key (для мгновенного Whisper)
+                    </label>
+                    <input
+                      type="password"
+                      value={sttApiKey}
+                      onChange={(e) => setSttApiKey(e.target.value)}
+                      placeholder="gsk_..."
+                      className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                    <span className="text-[10px] text-slate-500">
+                      Хранится строго локально в браузере. Бесплатно выдается в консоли Groq.
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-slate-600 uppercase">
+                        STT API Endpoint
+                      </label>
+                      <input
+                        type="text"
+                        value={sttBaseUrl}
+                        onChange={(e) => setSttBaseUrl(e.target.value)}
+                        placeholder="https://api.groq.com/openai/v1"
+                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-slate-600 uppercase">
+                        STT Модель
+                      </label>
+                      <input
+                        type="text"
+                        value={sttModel}
+                        onChange={(e) => setSttModel(e.target.value)}
+                        placeholder="whisper-large-v3"
+                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Тест микрофона */}
+                  <div className="pt-2 flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (micTestState === 'recording') {
+                          try {
+                            setMicTestState('transcribing');
+                            const res = await globalVoiceEngine.stopRecording();
+                            if (res.isTooShort) {
+                              setMicTestText('Запись слишком короткая (нужно более 2 сек)');
+                              setMicTestState('idle');
+                              return;
+                            }
+                            const text = await globalVoiceEngine.transcribe(res.blob, sttApiKey, sttBaseUrl, sttModel);
+                            setMicTestText(text || '(Пустой результат)');
+                            setMicTestState('success');
+                          } catch (err: any) {
+                            setMicTestText('Ошибка транскрибации: ' + err.message);
+                            setMicTestState('idle');
+                          }
+                        } else {
+                          try {
+                            setMicTestState('recording');
+                            setMicTestText('Говорите в микрофон...');
+                            await globalVoiceEngine.startRecording();
+                          } catch (err: any) {
+                            setMicTestText('Ошибка микрофона: ' + err.message);
+                            setMicTestState('idle');
+                          }
+                        }
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-xs transition cursor-pointer ${
+                        micTestState === 'recording'
+                          ? 'bg-red-600 text-white animate-pulse'
+                          : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      <Mic className="w-3.5 h-3.5" />
+                      <span>{micTestState === 'recording' ? 'Остановить запись' : 'Проверить микрофон'}</span>
+                    </button>
+                    {micTestText && (
+                      <span className="text-xs text-slate-700 font-mono italic truncate max-w-sm">
+                        {micTestText}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Настройки TTS */}
+                <div className="space-y-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <Volume2 className="w-4 h-4 text-blue-600" />
+                    <span>Настройки Orpheus / Kokoro TTS (Синтез речи)</span>
+                  </h4>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-slate-600 uppercase">
+                        TTS Base URL
+                      </label>
+                      <input
+                        type="text"
+                        value={ttsBaseUrl}
+                        onChange={(e) => setTtsBaseUrl(e.target.value)}
+                        placeholder="http://localhost:8880/v1"
+                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-slate-600 uppercase">
+                        TTS Голос (Voice ID)
+                      </label>
+                      <input
+                        type="text"
+                        value={groqTtsVoice}
+                        onChange={(e) => setGroqTtsVoice(e.target.value)}
+                        placeholder="sveta / hannah"
+                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTtsTestState('playing');
+                        globalVoiceEngine.playbackRate = ttsSpeed || 1.0;
+                        globalVoiceEngine.speakGroqOrpheus(
+                          'Привет! Это проверка работы голосового движка в единой экосистеме Lab и ToolHub. Все работает отлично!',
+                          ttsApiKey,
+                          groqTtsModel,
+                          groqTtsVoice,
+                          ttsBaseUrl
+                        ).then(() => setTtsTestState('idle')).catch(() => setTtsTestState('idle'));
+                      }}
+                      className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs flex items-center gap-1.5 transition cursor-pointer"
+                    >
+                      <Headphones className="w-3.5 h-3.5" />
+                      <span>{ttsTestState === 'playing' ? 'Озвучивается...' : 'Тест озвучки'}</span>
+                    </button>
+                    <span className="text-[11px] text-slate-500">
+                      Авто-фоллбек: при отсутствии внешнего TTS сервера используется браузерный голос
+                    </span>
+                  </div>
+                </div>
+
+                {/* Горячая клавиша */}
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                  <div className="text-xs font-bold text-slate-900 uppercase">
+                    Хоткей Hold-to-Talk
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="text"
+                      value={voiceHotkey}
+                      onChange={(e) => setVoiceHotkey(e.target.value)}
+                      placeholder="Space"
+                      className="w-28 bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-mono font-bold text-slate-900 text-center"
+                    />
+                    <span className="text-xs text-slate-600">
+                      Зажмите клавишу (по умолчанию Space) в любой момент для голосового ввода сообщения
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
             {activeTab === 'agent' && (
               <div className="space-y-6">
                 {/* Системный промпт */}

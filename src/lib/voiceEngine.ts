@@ -15,7 +15,7 @@ export class VoiceEngine {
   private isPlaybackCancelled: boolean = false;
 
   // Конвейер предзагруженных промисов аудиотреков
-  private audioPlayQueue: Array<Promise<HTMLAudioElement | null>> = [];
+  private audioPlayQueue: Array<Promise<HTMLAudioElement | (() => Promise<void>) | null>> = [];
   private isProcessingQueue: boolean = false;
   public playbackRate: number = 1.0;
 
@@ -295,7 +295,7 @@ export class VoiceEngine {
       if (!result || this.isPlaybackCancelled) continue;
 
       if (typeof result === 'function') {
-        await result();
+        await (result as () => Promise<void>)();
         continue;
       }
 

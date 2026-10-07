@@ -3,7 +3,7 @@ import ruFallback from '../../public/langs/ru.json';
 import enFallback from '../../public/langs/en.json';
 import zhFallback from '../../public/langs/zh.json';
 
-type Translations = Record<string, string>;
+type Translations = Record<string, any>;
 
 interface I18nContextType {
   t: (key: string, params?: Record<string, string | number>) => string;
@@ -18,9 +18,9 @@ const SUPPORTED_LANGS = ['ru', 'en', 'zh'];
 const DEFAULT_LANG = 'en';
 
 const FALLBACKS: Record<string, Translations> = {
-  ru: ruFallback as Translations,
-  en: enFallback as Translations,
-  zh: zhFallback as Translations,
+  ru: ruFallback as unknown as Translations,
+  en: enFallback as unknown as Translations,
+  zh: zhFallback as unknown as Translations,
 };
 
 const getInitialLang = () => {

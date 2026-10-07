@@ -1311,27 +1311,27 @@ export const ChatArea: React.FC = () => {
       </div>
 
       {pinnedMessages.length > 0 && (
-        <div className="px-6 py-2 bg-muted/60 backdrop-blur border-b border-border flex items-center justify-between text-xs shrink-0 select-none shadow-sm transition-all animate-in fade-in duration-200 z-20">
+        <div className="px-6 py-2 bg-amber-50 border-b border-amber-200 flex items-center justify-between text-xs shrink-0 select-none shadow-xs transition-all animate-in fade-in duration-200 z-20">
           <button
             onClick={handleScrollToPinned}
             className="flex items-center gap-2.5 min-w-0 flex-1 text-left group hover:opacity-90 transition-opacity"
           >
-            <div className="p-1 rounded bg-amber-500/10 text-amber-500 shrink-0">
-              <Pin className="w-3.5 h-3.5 fill-amber-500" />
+            <div className="p-1 rounded bg-amber-200/60 text-amber-800 shrink-0">
+              <Pin className="w-3.5 h-3.5 fill-amber-600" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-amber-600 dark:text-amber-400 text-[13px] uppercase tracking-wider">
+                <span className="font-bold text-amber-900 text-[13px] uppercase tracking-wider">
                   {t('chat.pinned_bar_title')}
                 </span>
-                <span className="text-[12px] text-muted-foreground font-mono bg-background/80 px-1.5 py-0.2 rounded border border-border/50">
+                <span className="text-[12px] text-amber-800 font-mono bg-white px-1.5 py-0.2 rounded border border-amber-300">
                   {t('chat.pinned_bar_count', {
                     current: (currentPinnedIndex % pinnedMessages.length) + 1,
                     total: pinnedMessages.length,
                   })}
                 </span>
               </div>
-              <p className="text-xs text-foreground/80 truncate font-mono mt-0.5">
+              <p className="text-xs text-amber-900/90 truncate font-mono mt-0.5">
                 {pinnedMessages[currentPinnedIndex % pinnedMessages.length]?.content.slice(0, 120) || '...'}
               </p>
             </div>
@@ -1339,7 +1339,7 @@ export const ChatArea: React.FC = () => {
           <div className="flex items-center gap-1 shrink-0 ml-3">
             <button
               onClick={() => togglePinMessage(pinnedMessages[currentPinnedIndex % pinnedMessages.length].id)}
-              className="p-1 text-muted-foreground hover:text-amber-500 rounded hover:bg-background/80 transition-colors"
+              className="p-1 text-amber-700 hover:text-amber-900 rounded hover:bg-amber-100 transition-colors"
               title={t('chat.unpin_message')}
             >
               <PinOff className="w-3.5 h-3.5" />

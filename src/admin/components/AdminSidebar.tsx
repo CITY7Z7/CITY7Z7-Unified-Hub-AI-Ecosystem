@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
-  FolderTree, Cpu, Layers, PlaySquare, Activity, Settings as SettingsIcon, 
-  Languages, LogOut, Sun, Moon
+  FolderTree, Cpu, Layers, PlaySquare, Activity, Settings as SettingsIcon
 } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import settings from '@/App.json';
@@ -21,26 +20,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, onOpenSettings }) =>
   const [isPaused, setIsPaused] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(true);
 
-  // Инициализация темы из localStorage или системной настройки
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    const saved = localStorage.getItem('theme');
-    if (saved === 'dark' || saved === 'light') return saved;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  });
-
+  // Светлая тема гарантирована во всей экосистеме
   useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
-  };
+    document.documentElement.classList.remove('dark');
+    localStorage.setItem('theme', 'light');
+  }, []);
 
   const banners = settings.banners || [];
   const displayBanners = banners.length > 1 ? [...banners, banners[0]] : banners;

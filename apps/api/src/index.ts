@@ -10,7 +10,7 @@ import path from 'path';
 import os from 'os';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { HubSDK } from '../../../SDK/JS/sdk.ts';
+import { HubSDK } from '../../../packages/sdk/src/index.ts';
 import { callMcpStdio } from './mcp-helper.js';
 import { callMcpPooled, killMcpProcess, getPoolStatus, cleanupAllPoolProcesses } from './mcp-pool.js';
 
@@ -94,7 +94,7 @@ const logExecution = async (params: {
         durationMs: params.durationMs,
         success: params.success,
         payload: safeStringifyJson(params.payload, '{}'),
-        result: safeStringifyJson(params.result, null),
+        result: safeStringifyJson(params.result, '{}'),
         error: params.error || null,
         callerIp: params.callerIp || '127.0.0.1'
       }
@@ -191,7 +191,7 @@ const executeTool = async (tool: any, payload: any) => {
     await fs.writeFile(path.join(runDir, 'input.json'), JSON.stringify(payload || {}));
 
     // 2. Переменные окружения (INPUT_*)
-    const env: Record<string, string> = { ...process.env };
+    const env: Record<string, string> = { ...(process.env as Record<string, string>) };
     if (payload && typeof payload === 'object') {
       for (const [k, v] of Object.entries(payload)) {
         const sanitizedKey = k.replace(/[^a-zA-Z0-9_]/g, '_').toUpperCase();
@@ -925,7 +925,7 @@ fastify.register(async (admin) => {
         slug: toolSlug,
         agentDescription: mcpTool.description || `MCP tool from ${source.name}`,
         inputSchema: safeStringifyJson(mcpTool.inputSchema, '{}'),
-        outputSchema: safeStringifyJson(mcpTool.outputSchema, null),
+        outputSchema: safeStringifyJson(mcpTool.outputSchema, '{}'),
         isMcpProxy: true,
         mcpMethodName: mcpTool.name,
         mcpSourceId: source.id,
@@ -1606,7 +1606,7 @@ fastify.register(async (admin) => {
 
 let adminDistPath = path.join(process.cwd(), 'apps', 'admin', 'dist');
 if (!fsSync.existsSync(adminDistPath)) {
-  adminDistPath = path.resolve(import.meta.dir, '../../admin/dist');
+  adminDistPath = path.resolve((import.meta as any).dir || process.cwd(), '../../admin/dist');
 }
 
 if (fsSync.existsSync(adminDistPath)) {

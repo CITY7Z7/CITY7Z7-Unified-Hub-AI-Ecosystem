@@ -248,7 +248,9 @@ export const Sidebar: React.FC<SidebarProps> = () => {
             baseURL: chat.graphmemUrl || 'http://localhost:3000/api',
             token: globalToken || chat.graphmemToken,
           });
-          await sdk.deleteDialog(chat.graphmemDialogId);
+          if (chat.graphmemDialogId) {
+            await sdk.deleteDialog(chat.graphmemDialogId);
+          }
         } catch (err) {
           console.error('Failed to delete GraphMem dialog on chat delete:', err);
         }
@@ -368,10 +370,6 @@ export const Sidebar: React.FC<SidebarProps> = () => {
     setEditingFolderId(null);
   };
 
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
-
   // Рекурсивный рендер элементов дерева с направляющими линиями
   const renderTreeNode = (node: TreeNode, depth = 0) => {
     if (node.type === 'chat') {
@@ -401,12 +399,13 @@ export const Sidebar: React.FC<SidebarProps> = () => {
         >
           <div className="flex items-center gap-2 min-w-0 flex-1">
             {chat.graphmemEnabled ? (
-              <BrainCircuit
-                className={`w-3.5 h-3.5 shrink-0 transition-colors ${
-                  isActive ? 'text-cyan-500' : 'text-cyan-500/70 group-hover:text-cyan-500'
-                }`}
-                title={t('sidebar.graphmem_active_tooltip')}
-              />
+              <span title={t('sidebar.graphmem_active_tooltip')} className="shrink-0">
+                <BrainCircuit
+                  className={`w-3.5 h-3.5 transition-colors ${
+                    isActive ? 'text-cyan-500' : 'text-cyan-500/70 group-hover:text-cyan-500'
+                  }`}
+                />
+              </span>
             ) : (
               <MessageSquare
                 className={`w-3.5 h-3.5 shrink-0 ${
@@ -764,12 +763,13 @@ export const Sidebar: React.FC<SidebarProps> = () => {
               >
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   {chat.graphmemEnabled ? (
-                    <BrainCircuit
-                      className={`w-4 h-4 shrink-0 transition-colors ${
-                        isActive ? 'text-cyan-500' : 'text-cyan-500/70 group-hover:text-cyan-500'
-                      }`}
-                      title={t('sidebar.graphmem_active_tooltip')}
-                    />
+                    <span title={t('sidebar.graphmem_active_tooltip')} className="shrink-0">
+                      <BrainCircuit
+                        className={`w-4 h-4 transition-colors ${
+                          isActive ? 'text-cyan-500' : 'text-cyan-500/70 group-hover:text-cyan-500'
+                        }`}
+                      />
+                    </span>
                   ) : (
                     <MessageSquare
                       className={`w-4 h-4 shrink-0 ${

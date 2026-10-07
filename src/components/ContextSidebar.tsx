@@ -1569,26 +1569,30 @@ export const ContextSidebar: React.FC = () => {
             </div>
 
             {/* Самое тяжелое сообщение */}
-            {analyticsData.heaviestMsg && (
-              <div className="p-3.5 bg-muted/30 border border-border rounded-xl space-y-2">
-                <div className="text-xs text-muted-foreground font-semibold uppercase flex items-center gap-1">
-                  <FileText className="w-3.5 h-3.5 text-destructive" />
-                  {t('context.analytics_heaviest_msg')}
-                </div>
-                <button
-                  onClick={() => scrollToMessage(analyticsData!.heaviestMsg!.id)}
-                  className="w-full text-left p-2.5 bg-background/80 hover:bg-background rounded-lg border border-border/60 transition-colors group"
-                >
-                  <div className="flex items-center justify-between font-mono text-xs font-bold text-destructive">
-                    <span>{analyticsData.heaviestMsg.role.toUpperCase()}</span>
-                    <span>{analyticsData.heaviestMsg.tokens.toLocaleString()} tok</span>
+            {(() => {
+              const heaviest = analyticsData.heaviestMsg as { id: string; tokens: number; role: string; excerpt: string } | null;
+              if (!heaviest) return null;
+              return (
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                  <div className="text-xs text-slate-500 font-semibold uppercase flex items-center gap-1">
+                    <FileText className="w-3.5 h-3.5 text-red-600" />
+                    {t('context.analytics_heaviest_msg')}
                   </div>
-                  <p className="text-xs text-muted-foreground truncate mt-1 group-hover:text-foreground transition-colors font-sans">
-                    {analyticsData.heaviestMsg.excerpt}
-                  </p>
-                </button>
-              </div>
-            )}
+                  <button
+                    onClick={() => scrollToMessage(heaviest.id)}
+                    className="w-full text-left p-2.5 bg-white hover:bg-slate-100/60 rounded-lg border border-slate-200 transition-colors group shadow-2xs"
+                  >
+                    <div className="flex items-center justify-between font-mono text-xs font-bold text-red-600">
+                      <span>{heaviest.role.toUpperCase()}</span>
+                      <span>{heaviest.tokens.toLocaleString()} tok</span>
+                    </div>
+                    <p className="text-xs text-slate-600 truncate mt-1 group-hover:text-slate-900 transition-colors font-sans">
+                      {heaviest.excerpt}
+                    </p>
+                  </button>
+                </div>
+              );
+            })()}
 
             {/* Распределение типа вывода */}
             <div className="p-3.5 bg-muted/30 border border-border rounded-xl space-y-3">

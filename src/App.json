@@ -1,5 +1,4 @@
 {
-  "githubUrl": "https://github.com/Talos-popcorn/lab",
   "banners": [
     {
       "badgeKey": "banner.badge_1",
@@ -8,14 +7,6 @@
       "link": "https://t.me/code_and_spectacles",
       "subdomain": "labstudio.tech",
       "theme": "violet"
-    },
-    {
-      "badgeKey": "banner.badge_2",
-      "textKey": "banner.text_2",
-      "linkTextKey": "banner.link_text_2",
-      "link": "https://github.com/Talos-popcorn/toolhub",
-      "subdomain": "github.com",
-      "theme": "cyan"
     }
   ]
 }
