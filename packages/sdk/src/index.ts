@@ -17,7 +17,25 @@ export class HubSDK {
   }
 
   async _request(path: string, method = 'GET', body: any = null) {
-    const url = `${this.baseUrl}${path}`;
+    // Безопасное определение целевого URL:
+    // Если клиент работает в браузере, а baseUrl пустой или указывает на локальный хост (localhost/127.0.0.1)
+    // либо совпадает с текущим origin, используем относительный путь или текущий origin.
+    // Это гарантирует работу при смене портов (3000, 3001), разных IP и HTTPS окружениях.
+    let targetBase = this.baseUrl;
+    if (typeof window !== 'undefined' && window.location) {
+      if (!targetBase || targetBase === window.location.origin) {
+        targetBase = '';
+      } else if (
+        (targetBase.includes('localhost') || targetBase.includes('127.0.0.1')) &&
+        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'https:')
+      ) {
+        // Локальный инстанс на домашнем ПК: привязываем к текущему origin окна браузера
+        targetBase = '';
+      }
+    }
+
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    const url = targetBase ? `${targetBase}${cleanPath}` : cleanPath;
     const headers: Record<string, string> = {
       'accept': 'application/json',
       ...this.extraHeaders

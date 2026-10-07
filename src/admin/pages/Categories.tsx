@@ -243,15 +243,21 @@ export function Categories() {
 
   const loadData = async () => {
     try {
-      const [cats, tls, rns] = await Promise.all([
-        fetch("/admin/api/categories").then(res => res.json()),
-        fetch("/admin/api/tools").then(res => res.json()),
-        fetch("/admin/api/runners").then(res => res.json())
+      const [catsRes, tlsRes, rnsRes] = await Promise.all([
+        fetch("/admin/api/categories"),
+        fetch("/admin/api/tools"),
+        fetch("/admin/api/runners")
       ]);
+      const cats = catsRes.ok ? await catsRes.json() : [];
+      const tls = tlsRes.ok ? await tlsRes.json() : [];
+      const rns = rnsRes.ok ? await rnsRes.json() : [];
       setFlatCategories(Array.isArray(cats) ? cats : []);
       setTools(Array.isArray(tls) ? tls : []);
       setRunners(Array.isArray(rns) ? rns : []);
-    } catch { toast.error(t("cats.err_load_data")); }
+    } catch (err: any) {
+      console.error("Failed to load skill tree data:", err);
+      toast.error(t("cats.err_load_data"));
+    }
   };
 
   useEffect(() => { loadData(); }, []);
@@ -415,8 +421,16 @@ export function Categories() {
     const url = isEdit ? `/admin/api/categories/${editingCategoryId}` : "/admin/api/categories";
     const method = isEdit ? "PUT" : "POST";
 
+    let parsedEnv = {};
+    if (categoryForm.mcpEnv && categoryForm.mcpEnv.trim()) {
+      try {
+        parsedEnv = JSON.parse(categoryForm.mcpEnv);
+      } catch (err: any) {
+        return toast.error(t("cats.err_invalid_mcp_env", { error: err.message }));
+      }
+    }
+
     try {
-      const parsedEnv = JSON.parse(categoryForm.mcpEnv || "{}");
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
@@ -435,7 +449,7 @@ export function Categories() {
         toast.error(err.error || t("cats.err_save_cat"));
       }
     } catch (e: any) {
-      toast.error(t("cats.err_invalid_mcp_env", { error: e.message }));
+      toast.error(t("cats.err_save_cat") + ": " + e.message);
     }
   };
 
@@ -444,12 +458,23 @@ export function Categories() {
     const url = editingToolId ? `/admin/api/tools/${editingToolId}` : "/admin/api/tools";
     const method = editingToolId ? "PUT" : "POST";
     
+    let parsedInputSchema = {};
+    let parsedOutputSchema = {};
+    let parsedExamples: any[] = [];
+    try {
+      parsedInputSchema = JSON.parse(toolForm.inputSchema || "{}");
+      parsedOutputSchema = JSON.parse(toolForm.outputSchema || "{}");
+      parsedExamples = JSON.parse(toolForm.examples || "[]");
+    } catch (err: any) {
+      return toast.error(t("tool.err_invalid_json", { error: err.message }));
+    }
+
     try {
       const payload = {
         ...toolForm,
-        inputSchema: JSON.parse(toolForm.inputSchema || "{}"),
-        outputSchema: JSON.parse(toolForm.outputSchema || "{}"),
-        examples: JSON.parse(toolForm.examples || "[]"),
+        inputSchema: parsedInputSchema,
+        outputSchema: parsedOutputSchema,
+        examples: parsedExamples,
         mcpSourceId: toolForm.mcpSourceId ? parseInt(toolForm.mcpSourceId) : null
       };
 
@@ -468,7 +493,7 @@ export function Categories() {
         toast.error(err.error || t("tool.err_save_tool"));
       }
     } catch (e: any) {
-      toast.error(t("tool.err_invalid_json", { error: e.message }));
+      toast.error(t("tool.err_save_tool") + ": " + e.message);
     }
   };
 
