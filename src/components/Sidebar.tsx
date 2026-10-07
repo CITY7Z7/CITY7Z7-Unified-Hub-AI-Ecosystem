@@ -96,6 +96,10 @@ export const Sidebar: React.FC<SidebarProps> = () => {
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editFolderPrefix, setEditFolderPrefix] = useState('');
 
+  // Состояния для гарантированного удаления без использования window.confirm (работает в iframe и на мобильных)
+  const [chatToDelete, setChatToDelete] = useState<{ id: string; title: string; hasGraphmem: boolean } | null>(null);
+  const [folderToDelete, setFolderToDelete] = useState<FolderNode | null>(null);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -232,36 +236,41 @@ export const Sidebar: React.FC<SidebarProps> = () => {
   const handleDeleteChat = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     const chat = await db.chats.get(id);
-    const isGraphmemActive = chat?.graphmemEnabled && chat.graphmemDialogId;
+    const isGraphmemActive = Boolean(chat?.graphmemEnabled && chat?.graphmemDialogId);
+    setChatToDelete({
+      id,
+      title: chat?.title || 'Без названия',
+      hasGraphmem: isGraphmemActive,
+    });
+  };
 
-    const confirmMessage = isGraphmemActive
-      ? t('sidebar.confirm_delete_with_graphmem')
-      : t('sidebar.confirm_delete');
-
-    if (confirm(confirmMessage)) {
-      if (isGraphmemActive) {
-        try {
-          const mod = await import('../lib/graphmemSdk');
-          const GraphMemSDK = mod.GraphMemSDK || mod.default;
-          const globalToken = useChatStore.getState().graphmemGlobalToken;
-          const targetBase = chat.graphmemUrl || (typeof window !== 'undefined' && window.location.protocol === 'https:' ? `${window.location.origin}/api` : 'http://localhost:3000/api');
-          const sdk = new GraphMemSDK({
-            baseURL: targetBase,
-            token: globalToken || chat.graphmemToken,
-          });
-          if (chat.graphmemDialogId) {
-            await sdk.deleteDialog(chat.graphmemDialogId);
-          }
-        } catch (err) {
-          console.warn('Failed to delete GraphMem dialog on chat delete:', err);
+  const confirmDeleteChat = async () => {
+    if (!chatToDelete) return;
+    const { id, hasGraphmem } = chatToDelete;
+    if (hasGraphmem) {
+      try {
+        const chat = await db.chats.get(id);
+        const mod = await import('../lib/graphmemSdk');
+        const GraphMemSDK = mod.GraphMemSDK || mod.default;
+        const globalToken = useChatStore.getState().graphmemGlobalToken;
+        const targetBase = chat?.graphmemUrl || (typeof window !== 'undefined' && window.location.protocol === 'https:' ? `${window.location.origin}/api` : 'http://localhost:3000/api');
+        const sdk = new GraphMemSDK({
+          baseURL: targetBase,
+          token: globalToken || chat?.graphmemToken,
+        });
+        if (chat?.graphmemDialogId) {
+          await sdk.deleteDialog(chat.graphmemDialogId);
         }
-      }
-      await db.chats.delete(id);
-      await db.messages.where('chatId').equals(id).delete();
-      if (activeChatId === id) {
-        setActiveChatId(null);
+      } catch (err) {
+        console.warn('Failed to delete GraphMem dialog on chat delete:', err);
       }
     }
+    await db.chats.delete(id);
+    await db.messages.where('chatId').equals(id).delete();
+    if (activeChatId === id) {
+      setActiveChatId(null);
+    }
+    setChatToDelete(null);
   };
 
   const handleStartRename = (id: string, title: string, e: React.MouseEvent) => {
@@ -316,31 +325,34 @@ export const Sidebar: React.FC<SidebarProps> = () => {
   };
 
   // Массовое удаление папки
-  const handleDeleteFolder = async (folder: FolderNode, e: React.MouseEvent) => {
+  const handleDeleteFolder = (folder: FolderNode, e: React.MouseEvent) => {
     e.stopPropagation();
-    const count = folder.allChats.length;
-    if (confirm(t('sidebar.confirm_delete_folder', { folder: folder.prefix, count }))) {
-      const ids = folder.allChats.map((c) => c.id);
-      for (const chat of folder.allChats) {
-        if (chat.graphmemEnabled && chat.graphmemDialogId) {
-          try {
-            const mod = await import('../lib/graphmemSdk');
-            const GraphMemSDK = mod.GraphMemSDK || mod.default;
-            const globalToken = useChatStore.getState().graphmemGlobalToken;
-            const sdk = new GraphMemSDK({
-              baseURL: chat.graphmemUrl || 'http://localhost:3000/api',
-              token: globalToken || chat.graphmemToken,
-            });
-            await sdk.deleteDialog(chat.graphmemDialogId);
-          } catch (err) {}
-        }
-      }
-      await db.chats.bulkDelete(ids);
-      await db.messages.where('chatId').anyOf(ids).delete();
-      if (activeChatId && ids.includes(activeChatId)) {
-        setActiveChatId(null);
+    setFolderToDelete(folder);
+  };
+
+  const confirmDeleteFolder = async () => {
+    if (!folderToDelete) return;
+    const ids = folderToDelete.allChats.map((c) => c.id);
+    for (const chat of folderToDelete.allChats) {
+      if (chat.graphmemEnabled && chat.graphmemDialogId) {
+        try {
+          const mod = await import('../lib/graphmemSdk');
+          const GraphMemSDK = mod.GraphMemSDK || mod.default;
+          const globalToken = useChatStore.getState().graphmemGlobalToken;
+          const sdk = new GraphMemSDK({
+            baseURL: chat.graphmemUrl || 'http://localhost:3000/api',
+            token: globalToken || chat.graphmemToken,
+          });
+          await sdk.deleteDialog(chat.graphmemDialogId);
+        } catch (err) {}
       }
     }
+    await db.chats.bulkDelete(ids);
+    await db.messages.where('chatId').anyOf(ids).delete();
+    if (activeChatId && ids.includes(activeChatId)) {
+      setActiveChatId(null);
+    }
+    setFolderToDelete(null);
   };
 
   // Массовое переименование префикса папки
@@ -981,6 +993,94 @@ export const Sidebar: React.FC<SidebarProps> = () => {
           );
         })()}
       </div>
+
+      {/* Модальное окно подтверждения удаления чата (работает без блокировок iframe) */}
+      {chatToDelete && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+          onClick={(e) => {
+            e.stopPropagation();
+            setChatToDelete(null);
+          }}
+        >
+          <div 
+            className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-5 border border-slate-200 text-slate-900 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2.5 text-red-600 font-bold text-sm">
+              <Trash2 className="w-4 h-4 shrink-0" />
+              <span>{t('sidebar.delete_chat')}</span>
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              {chatToDelete.hasGraphmem 
+                ? t('sidebar.confirm_delete_with_graphmem')
+                : t('sidebar.confirm_delete')}
+            </p>
+            <div className="text-xs font-semibold text-slate-800 bg-slate-100 p-2.5 rounded-lg truncate border border-slate-200">
+              "{chatToDelete.title}"
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setChatToDelete(null)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteChat}
+                className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-red-600 hover:bg-red-700 text-white shadow-xs transition cursor-pointer"
+              >
+                {t('common.delete')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно подтверждения удаления папки */}
+      {folderToDelete && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+          onClick={(e) => {
+            e.stopPropagation();
+            setFolderToDelete(null);
+          }}
+        >
+          <div 
+            className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-5 border border-slate-200 text-slate-900 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2.5 text-red-600 font-bold text-sm">
+              <Trash2 className="w-4 h-4 shrink-0" />
+              <span>{t('sidebar.delete_folder')}</span>
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              {t('sidebar.confirm_delete_folder', { folder: folderToDelete.prefix, count: folderToDelete.allChats.length })}
+            </p>
+            <div className="text-xs font-semibold text-slate-800 bg-slate-100 p-2.5 rounded-lg truncate border border-slate-200">
+              📁 {folderToDelete.prefix} ({folderToDelete.allChats.length} {t('cats.items').toLowerCase()})
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setFolderToDelete(null)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteFolder}
+                className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-red-600 hover:bg-red-700 text-white shadow-xs transition cursor-pointer"
+              >
+                {t('common.delete')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

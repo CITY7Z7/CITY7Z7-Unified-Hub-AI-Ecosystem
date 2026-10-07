@@ -38,6 +38,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     tokenizerType,
     isRetrievingGraphmem,
     voiceInputEnabled,
+    sttProvider,
     sttApiKey,
     voiceHotkeyEnabled,
     voiceHotkey,
@@ -110,11 +111,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     try {
       setIsHoldingMic(true);
       setMicHintText(t('voice.listening'));
-      await globalVoiceEngine.startRecording();
+      if (sttProvider === 'local') {
+        await globalVoiceEngine.startLocalSpeechRecognition({
+          onInterim: (text) => {
+            if (text) setMicHintText(text);
+          }
+        });
+      } else {
+        await globalVoiceEngine.startRecording();
+      }
     } catch (err: any) {
       setIsHoldingMic(false);
-      setMicHintText(t('voice.mic_error'));
-      setTimeout(() => setMicHintText(''), 2000);
+      setMicHintText(err?.message || t('voice.mic_error'));
+      setTimeout(() => setMicHintText(''), 2500);
     }
   };
 
@@ -123,19 +132,25 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     setIsHoldingMic(false);
 
     try {
-      const result = await globalVoiceEngine.stopRecording();
+      let text = '';
+      if (sttProvider === 'local') {
+        text = await globalVoiceEngine.stopLocalSpeechRecognition();
+        setMicHintText('');
+      } else {
+        const result = await globalVoiceEngine.stopRecording();
 
-      if (result.isTooShort) {
-        setMicHintText(t('voice.too_short'));
-        setTimeout(() => setMicHintText(''), 1500);
-        return;
+        if (result.isTooShort) {
+          setMicHintText(t('voice.too_short'));
+          setTimeout(() => setMicHintText(''), 1500);
+          return;
+        }
+
+        setMicHintText(t('voice.whisper_processing'));
+        text = await globalVoiceEngine.transcribe(result.blob, activeGroqKey, sttBaseUrl, sttModel);
+        setMicHintText('');
       }
 
-      setMicHintText(t('voice.whisper_processing'));
-      const text = await globalVoiceEngine.transcribe(result.blob, activeGroqKey, sttBaseUrl, sttModel);
-      setMicHintText('');
-
-      if (text.trim()) {
+      if (text && text.trim()) {
         if (voiceAppendToInput) {
           setInput((prev) => (prev ? `${prev} ${text.trim()}` : text.trim()));
         } else {

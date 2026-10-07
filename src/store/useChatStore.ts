@@ -237,9 +237,11 @@ interface ChatStore {
   graphmemGlobalToken: string;
   setGraphmemGlobalToken: (val: string) => void;
 
-  // Voice Mode Settings (Groq Engine)
+  // Voice Mode Settings (Local Web Speech vs Server Whisper)
   voiceInputEnabled: boolean;
   setVoiceInputEnabled: (val: boolean) => void;
+  sttProvider: 'local' | 'cloud';
+  setSttProvider: (val: 'local' | 'cloud') => void;
   autoTtsEnabled: boolean;
   setAutoTtsEnabled: (val: boolean) => void;
   sttApiKey: string;
@@ -304,6 +306,8 @@ export const useChatStore = create<ChatStore>()(
 
       voiceInputEnabled: false,
       setVoiceInputEnabled: (voiceInputEnabled) => set({ voiceInputEnabled }),
+      sttProvider: 'local',
+      setSttProvider: (sttProvider) => set({ sttProvider }),
       autoTtsEnabled: false,
       setAutoTtsEnabled: (autoTtsEnabled) => set({ autoTtsEnabled }),
       sttApiKey: '',
@@ -1317,6 +1321,7 @@ export const useChatStore = create<ChatStore>()(
         toolhubPassword: state.toolhubPassword,
         graphmemGlobalToken: state.graphmemGlobalToken,
         voiceInputEnabled: state.voiceInputEnabled,
+        sttProvider: state.sttProvider,
         autoTtsEnabled: state.autoTtsEnabled,
         sttApiKey: state.sttApiKey,
         ttsApiKey: state.ttsApiKey,

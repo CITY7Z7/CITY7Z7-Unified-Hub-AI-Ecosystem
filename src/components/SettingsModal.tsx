@@ -45,6 +45,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     importBackup,
     voiceInputEnabled,
     setVoiceInputEnabled,
+    sttProvider,
+    setSttProvider,
     autoTtsEnabled,
     setAutoTtsEnabled,
     sttApiKey,
@@ -705,73 +707,126 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                   </div>
                 </div>
 
-                {/* Настройки Groq Whisper STT */}
-                <div className="space-y-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                    <Mic className="w-4 h-4 text-blue-600" />
-                    <span>Настройки Whisper STT (Groq Cloud)</span>
-                  </h4>
+                {/* Настройки Speech Recognition (STT): Локальный или Серверный */}
+                <div className="space-y-4 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                      <Mic className="w-4 h-4 text-blue-600" />
+                      <span>Распознавание речи (Speech Recognition)</span>
+                    </h4>
 
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-slate-600 uppercase">
-                      Groq API Key (для мгновенного Whisper)
-                    </label>
-                    <input
-                      type="password"
-                      value={sttApiKey}
-                      onChange={(e) => setSttApiKey(e.target.value)}
-                      placeholder="gsk_..."
-                      className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                    />
-                    <span className="text-[10px] text-slate-500">
-                      Хранится строго локально в браузере. Бесплатно выдается в консоли Groq.
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-semibold text-slate-600 uppercase">
-                        STT API Endpoint
-                      </label>
-                      <input
-                        type="text"
-                        value={sttBaseUrl}
-                        onChange={(e) => setSttBaseUrl(e.target.value)}
-                        placeholder="https://api.groq.com/openai/v1"
-                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-semibold text-slate-600 uppercase">
-                        STT Модель
-                      </label>
-                      <input
-                        type="text"
-                        value={sttModel}
-                        onChange={(e) => setSttModel(e.target.value)}
-                        placeholder="whisper-large-v3"
-                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                      />
+                    {/* Переключатель провайдера STT */}
+                    <div className="flex items-center gap-1 bg-white p-1 rounded-lg border border-slate-200 shadow-2xs">
+                      <button
+                        type="button"
+                        onClick={() => setSttProvider('local')}
+                        className={`px-3 py-1 rounded text-xs font-semibold transition cursor-pointer ${
+                          sttProvider === 'local'
+                            ? 'bg-blue-600 text-white shadow-xs font-bold'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        }`}
+                      >
+                        🛡️ Локальный (Браузер)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSttProvider('cloud')}
+                        className={`px-3 py-1 rounded text-xs font-semibold transition cursor-pointer ${
+                          sttProvider === 'cloud'
+                            ? 'bg-blue-600 text-white shadow-xs font-bold'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        }`}
+                      >
+                        ⚡ Сервер (Whisper)
+                      </button>
                     </div>
                   </div>
 
-                  {/* Тест микрофона */}
+                  {sttProvider === 'local' ? (
+                    <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-900 space-y-2 text-xs">
+                      <div className="font-bold flex items-center gap-1.5 text-emerald-800">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        <span>Локальный автономный режим (Web Speech API)</span>
+                      </div>
+                      <p className="text-[11px] leading-relaxed text-emerald-800/90">
+                        Голос обрабатывается <strong>напрямую на вашем устройстве</strong> без отправки аудиофайлов сторонним сервисам. 
+                        Не требуется API-ключ, не тратятся токены, гарантирована 100% приватность.
+                      </p>
+                      <div className="text-[11px] text-emerald-700 font-medium">
+                        Поддерживается в Google Chrome, Microsoft Edge, Safari и современных Chromium-браузерах.
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 pt-1">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-semibold text-slate-600 uppercase">
+                          Groq API Key (для облачного Whisper)
+                        </label>
+                        <input
+                          type="password"
+                          value={sttApiKey}
+                          onChange={(e) => setSttApiKey(e.target.value)}
+                          placeholder="gsk_..."
+                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        />
+                        <span className="text-[10px] text-slate-500">
+                          Хранится строго локально в браузере. Выдается бесплатно в консоли Groq.
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-semibold text-slate-600 uppercase">
+                            STT API Endpoint
+                          </label>
+                          <input
+                            type="text"
+                            value={sttBaseUrl}
+                            onChange={(e) => setSttBaseUrl(e.target.value)}
+                            placeholder="https://api.groq.com/openai/v1"
+                            className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-semibold text-slate-600 uppercase">
+                            STT Модель
+                          </label>
+                          <input
+                            type="text"
+                            value={sttModel}
+                            onChange={(e) => setSttModel(e.target.value)}
+                            placeholder="whisper-large-v3"
+                            className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Универсальный тест микрофона для текущего режима */}
                   <div className="pt-2 flex items-center gap-3">
                     <button
                       type="button"
                       onClick={async () => {
                         if (micTestState === 'recording') {
                           try {
-                            setMicTestState('transcribing');
-                            const res = await globalVoiceEngine.stopRecording();
-                            if (res.isTooShort) {
-                              setMicTestText('Запись слишком короткая (нужно более 2 сек)');
-                              setMicTestState('idle');
-                              return;
+                            if (sttProvider === 'local') {
+                              setMicTestState('transcribing');
+                              const text = await globalVoiceEngine.stopLocalSpeechRecognition();
+                              setMicTestText(text || '(Речь не распознана)');
+                              setMicTestState('success');
+                            } else {
+                              setMicTestState('transcribing');
+                              const res = await globalVoiceEngine.stopRecording();
+                              if (res.isTooShort) {
+                                setMicTestText('Запись слишком короткая (нужно более 2 сек)');
+                                setMicTestState('idle');
+                                return;
+                              }
+                              const text = await globalVoiceEngine.transcribe(res.blob, sttApiKey, sttBaseUrl, sttModel);
+                              setMicTestText(text || '(Пустой результат)');
+                              setMicTestState('success');
                             }
-                            const text = await globalVoiceEngine.transcribe(res.blob, sttApiKey, sttBaseUrl, sttModel);
-                            setMicTestText(text || '(Пустой результат)');
-                            setMicTestState('success');
                           } catch (err: any) {
                             setMicTestText('Ошибка транскрибации: ' + err.message);
                             setMicTestState('idle');
@@ -779,8 +834,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                         } else {
                           try {
                             setMicTestState('recording');
-                            setMicTestText('Говорите в микрофон...');
-                            await globalVoiceEngine.startRecording();
+                            setMicTestText('Слушаю вас... Говорите в микрофон');
+                            if (sttProvider === 'local') {
+                              await globalVoiceEngine.startLocalSpeechRecognition({
+                                onInterim: (txt) => {
+                                  if (txt) setMicTestText(txt);
+                                }
+                              });
+                            } else {
+                              await globalVoiceEngine.startRecording();
+                            }
                           } catch (err: any) {
                             setMicTestText('Ошибка микрофона: ' + err.message);
                             setMicTestState('idle');
@@ -794,7 +857,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                       }`}
                     >
                       <Mic className="w-3.5 h-3.5" />
-                      <span>{micTestState === 'recording' ? 'Остановить запись' : 'Проверить микрофон'}</span>
+                      <span>{micTestState === 'recording' ? 'Завершить проверку' : `Проверить ${sttProvider === 'local' ? 'локальный' : 'серверный'} ввод`}</span>
                     </button>
                     {micTestText && (
                       <span className="text-xs text-slate-700 font-mono italic truncate max-w-sm">
@@ -972,8 +1035,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                   <div className="flex flex-wrap items-center gap-2 pt-1 select-none">
                     {([
                       { code: 'en', name: 'English' },
-                      { code: 'ru', name: 'Русский' },
-                      { code: 'zh', name: '中文 (简体)' }
+                      { code: 'ru', name: 'Русский' }
                     ] as const).map((l) => (
                       <button
                         key={l.code}

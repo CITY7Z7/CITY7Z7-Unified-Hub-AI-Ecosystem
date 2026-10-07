@@ -19,6 +19,77 @@ export class VoiceEngine {
   private isProcessingQueue: boolean = false;
   public playbackRate: number = 1.0;
 
+  // Локальное независимое распознавание речи (Web Speech API)
+  private localRecognitionInstance: any = null;
+  private localTranscriptAccumulated: string = '';
+
+  public isLocalSpeechRecognitionSupported(): boolean {
+    if (typeof window === 'undefined') return false;
+    return Boolean((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+  }
+
+  public startLocalSpeechRecognition(options?: { lang?: string; onInterim?: (text: string) => void }): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.stopSpeaking();
+      if (!this.isLocalSpeechRecognitionSupported()) {
+        reject(new Error('Локальное распознавание Web Speech API не поддерживается вашим браузером. Откройте в Chrome/Edge или настройте серверный Whisper.'));
+        return;
+      }
+      const SpeechRecognitionClass = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      this.localRecognitionInstance = new SpeechRecognitionClass();
+      this.localRecognitionInstance.continuous = true;
+      this.localRecognitionInstance.interimResults = true;
+      this.localRecognitionInstance.lang = options?.lang || (localStorage.getItem('lab-lang') === 'en' ? 'en-US' : 'ru-RU');
+      this.localTranscriptAccumulated = '';
+
+      this.localRecognitionInstance.onresult = (event: any) => {
+        let interimText = '';
+        let finalText = '';
+        for (let i = 0; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalText += event.results[i][0].transcript;
+          } else {
+            interimText += event.results[i][0].transcript;
+          }
+        }
+        this.localTranscriptAccumulated = (finalText + ' ' + interimText).trim();
+        if (options?.onInterim) {
+          options.onInterim(this.localTranscriptAccumulated);
+        }
+      };
+
+      this.localRecognitionInstance.onerror = (err: any) => {
+        console.warn('Local Speech Recognition notice:', err);
+      };
+
+      this.localRecognitionInstance.onstart = () => {
+        resolve();
+      };
+
+      try {
+        this.localRecognitionInstance.start();
+      } catch {
+        resolve();
+      }
+    });
+  }
+
+  public stopLocalSpeechRecognition(): Promise<string> {
+    return new Promise((resolve) => {
+      if (!this.localRecognitionInstance) {
+        resolve(this.localTranscriptAccumulated);
+        return;
+      }
+      try {
+        this.localRecognitionInstance.stop();
+      } catch {}
+      this.localRecognitionInstance = null;
+      setTimeout(() => {
+        resolve(this.localTranscriptAccumulated.trim());
+      }, 200);
+    });
+  }
+
   public async startRecording(): Promise<void> {
     this.stopSpeaking();
 

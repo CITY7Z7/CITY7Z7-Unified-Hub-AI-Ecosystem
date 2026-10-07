@@ -37,16 +37,20 @@ export function Logs() {
       const res = await fetch(`/admin/api/logs?${query}`);
       if (res.ok) {
         const data = await res.json();
-        setLogs(Array.isArray(data.logs) ? data.logs : []);
-        setTotal(data.total || 0);
-        setTotalPages(data.totalPages || 1);
-        setPage(data.page || 1);
+        const logsList = Array.isArray(data) ? data : (Array.isArray(data.logs) ? data.logs : []);
+        setLogs(logsList);
+        setTotal(typeof data.total === 'number' ? data.total : logsList.length);
+        setTotalPages(typeof data.totalPages === 'number' ? data.totalPages : 1);
+        setPage(typeof data.page === 'number' ? data.page : targetPage);
 
-        if (data.logs.length > 0) {
-          setSelectedLog(data.logs[0]);
+        if (logsList.length > 0) {
+          setSelectedLog(logsList[0]);
         } else {
           setSelectedLog(null);
         }
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        toast.error(errData.error || t("logs.err_fetch"));
       }
     } catch {
       toast.error(t("logs.err_fetch"));

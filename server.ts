@@ -222,12 +222,45 @@ app.put('/admin/api/settings', async (req: Request, res: Response) => {
 
 app.get('/admin/api/logs', async (req: Request, res: Response) => {
   if (!(await checkAdminAuth(req, res))) return;
-  const logs = await prisma.executionLog.findMany({
-    take: 100,
-    orderBy: { createdAt: 'desc' },
-    include: { tool: true }
-  });
-  res.json(logs);
+  const page = Math.max(1, parseInt(req.query.page as string) || 1);
+  const limit = Math.max(1, Math.min(500, parseInt(req.query.limit as string) || 50));
+  const search = ((req.query.search as string) || '').trim();
+
+  const where = search ? {
+    path: { contains: search }
+  } : {};
+
+  try {
+    const [total, rawLogs] = await Promise.all([
+      prisma.executionLog.count({ where }),
+      prisma.executionLog.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: { tool: true }
+      })
+    ]);
+
+    const formattedLogs = rawLogs.map((l) => ({
+      ...l,
+      payload: safeParseJson(l.payload, {}),
+      result: safeParseJson(l.result, {})
+    }));
+
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+
+    res.json({
+      logs: formattedLogs,
+      total,
+      page,
+      limit,
+      totalPages
+    });
+  } catch (err: any) {
+    console.error('Failed to query logs:', err);
+    res.status(500).json({ error: 'Failed to retrieve logs', details: err?.message });
+  }
 });
 
 app.delete('/admin/api/logs', async (req: Request, res: Response) => {

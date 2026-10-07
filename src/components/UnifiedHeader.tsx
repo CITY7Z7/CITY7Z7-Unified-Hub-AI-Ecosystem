@@ -14,8 +14,7 @@ import {
   PlayCircle, 
   Settings, 
   Globe,
-  Radio,
-  Home
+  Radio
 } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 
@@ -149,24 +148,15 @@ export const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
 
       {/* Правая панель действий */}
       <div className="flex items-center gap-2">
-        {/* Индикатор открытого режима домашнего ПК (без паролей) */}
-        <div 
-          className="hidden md:flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200"
-          title="Открытый режим для домашнего ПК: пароли вырезаны"
-        >
-          <Home className="w-3 h-3 text-slate-500" />
-          <span>Домашний ПК</span>
-        </div>
-
-        {/* Переключатель языка */}
+        {/* Переключатель языка (Русский / Английский) */}
         <div className="flex items-center border border-slate-200 rounded-md bg-slate-50 p-0.5 text-[11px]">
           <Globe className="w-3 h-3 text-slate-500 ml-1 mr-0.5" />
-          {(['en', 'ru', 'zh'] as const).map((l) => (
+          {(['en', 'ru'] as const).map((l) => (
             <button
               key={l}
               type="button"
               onClick={() => setLang(l)}
-              className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-semibold transition-all ${
+              className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-semibold transition-all cursor-pointer ${
                 lang === l
                   ? 'bg-white text-slate-900 shadow-2xs font-bold'
                   : 'text-slate-500 hover:text-slate-900'
