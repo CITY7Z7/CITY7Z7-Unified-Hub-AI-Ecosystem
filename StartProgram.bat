@@ -1,5 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
+cd /d "%~dp0"
 title Lab + ToolHub Unified Full Stack AI Ecosystem
 
 echo ======================================================================
@@ -7,66 +8,68 @@ echo    Lab + ToolHub Unified AI Workbench and Skill Execution Engine
 echo ======================================================================
 echo.
 
-:: Check for Bun or Node runtime
+set RUNTIME=
 where bun >nul 2>nul
-if %errorlevel% equ 0 (
-    set RUNTIME=bun
-    echo [OK] Detected Bun runtime.
-) else (
+if not errorlevel 1 set RUNTIME=bun
+if not defined RUNTIME (
     where node >nul 2>nul
-    if %errorlevel% equ 0 (
-        set RUNTIME=node
-        echo [OK] Detected Node.js runtime.
-    ) else (
-        echo [ERROR] Neither Bun nor Node.js found in PATH.
-        echo Please install Bun (https://bun.sh) or Node.js (https://nodejs.org).
-        pause
-        exit /b 1
-    )
+    if not errorlevel 1 set RUNTIME=node
 )
+if not defined RUNTIME goto :no_runtime
+echo [OK] Detected runtime: !RUNTIME!
 
-:: Prompt user for Port (Default: 3000)
 set DEFAULT_PORT=3000
 echo.
-set /p USER_PORT="Enter port to run the server [Press ENTER for default 3000]: "
-if "!USER_PORT!"=="" (
-    set PORT=!DEFAULT_PORT!
-) else (
-    set PORT=!USER_PORT!
-)
+set /p USER_PORT=Enter port to run the server [Press ENTER for default 3000]: 
+if "!USER_PORT!"=="" (set PORT=!DEFAULT_PORT!) else (set PORT=!USER_PORT!)
 
 echo.
-echo [INFO] Starting Lab + ToolHub Ecosystem on port %PORT%...
-echo [INFO] URL: http://localhost:%PORT%
-echo [INFO] ToolHub Admin: http://localhost:%PORT%/admin/
-echo [INFO] Swagger Docs: http://localhost:%PORT%/docs
+echo [INFO] Starting Lab + ToolHub Ecosystem on port !PORT!...
+echo [INFO] URL: http://localhost:!PORT!
+echo [INFO] ToolHub Admin: http://localhost:!PORT!/admin/
+echo [INFO] Swagger Docs: http://localhost:!PORT!/docs
 echo.
 
-set PORT=%PORT%
+if exist "hub.db" goto :run_server
 
-:: Check if database needs seeding or generation
-if not exist "hub.db" (
-    echo [INFO] Initializing SQLite database (hub.db)...
-    if "!RUNTIME!"=="bun" (
-        call bun run db:generate
-        call bun run db:push
-        call bun run db:seed -- --lang=en --admin-pass=admin --agent-pass=123
-    ) else (
-        call npx prisma generate
-        call npx prisma db push
-        call npx tsx prisma/seed.ts --lang=en --admin-pass=admin --agent-pass=123
-    )
-)
+echo [INFO] Initializing SQLite database - hub.db...
+if "!RUNTIME!"=="bun" goto :init_bun
 
-:: Run Full Stack Server
+call npx prisma generate
+if errorlevel 1 goto :failed
+call npx prisma db push
+if errorlevel 1 goto :failed
+call npx tsx prisma/seed.ts --lang=en --admin-pass=admin --agent-pass=123
+if errorlevel 1 goto :failed
+goto :run_server
+
+:init_bun
+call bun run db:generate
+if errorlevel 1 goto :failed
+call bun run db:push
+if errorlevel 1 goto :failed
+call bun run db:seed -- --lang=en --admin-pass=admin --agent-pass=123
+if errorlevel 1 goto :failed
+
+:run_server
 if "!RUNTIME!"=="bun" (
-    bun run start
+    call bun run start
 ) else (
-    npm run start
+    call npm run start
 )
+if errorlevel 1 goto :failed
+goto :end
 
-if %errorlevel% neq 0 (
-    echo.
-    echo [ERROR] Program exited with an error code.
-    pause
-)
+:no_runtime
+echo [ERROR] Neither Bun nor Node.js found in PATH.
+echo Please install Bun: https://bun.sh  or Node.js: https://nodejs.org
+goto :end
+
+:failed
+echo.
+echo [ERROR] A command failed. See the messages above.
+
+:end
+echo.
+pause
+endlocal
