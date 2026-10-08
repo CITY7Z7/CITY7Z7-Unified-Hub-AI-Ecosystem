@@ -69,9 +69,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const activeGroqKey = useMemo(() => {
     if (sttApiKey && sttApiKey.trim()) return sttApiKey.trim();
     const found = providers.find((p) =>
-      p.name.toLowerCase().includes('groq') ||
-      p.name.toLowerCase().includes('грок') ||
-      p.baseUrl.includes('groq')
+      p.name?.toLowerCase().includes('groq') ||
+      p.name?.toLowerCase().includes('грок') ||
+      p.baseUrl?.includes('groq')
     );
     return found?.apiKey || '';
   }, [sttApiKey, providers]);
@@ -167,16 +167,18 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   useEffect(() => {
     if (!voiceInputEnabled || !voiceHotkeyEnabled || !voiceHotkey) return;
 
-    const targetKey = voiceHotkey.toLowerCase();
+    const targetKey = String(voiceHotkey).trim().toLowerCase();
+    if (!targetKey) return;
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.repeat || isHoldingMic || isGenerating) return;
 
       const activeEl = document.activeElement;
       const isInputFocused = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
-      const pressedKey = e.code === 'Space' ? 'space' : e.key.toLowerCase();
+      const rawKey = e.key || e.code || '';
+      const pressedKey = e.code === 'Space' ? 'space' : (typeof rawKey === 'string' ? rawKey.toLowerCase() : '');
 
-      if (pressedKey === targetKey) {
+      if (pressedKey && pressedKey === targetKey) {
         if (isInputFocused && targetKey === 'space' && e.target === textareaRef.current && input.length > 0) {
           return; // Не мешаем обычному пробелу во время ввода
         }
@@ -186,8 +188,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     };
 
     const onKeyUp = (e: KeyboardEvent) => {
-      const pressedKey = e.code === 'Space' ? 'space' : e.key.toLowerCase();
-      if (pressedKey === targetKey && isHoldingMic) {
+      const rawKey = e.key || e.code || '';
+      const pressedKey = e.code === 'Space' ? 'space' : (typeof rawKey === 'string' ? rawKey.toLowerCase() : '');
+      if (pressedKey && pressedKey === targetKey && isHoldingMic) {
         e.preventDefault();
         handleMicEnd();
       }

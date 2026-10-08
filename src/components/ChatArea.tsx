@@ -827,9 +827,9 @@ export const ChatArea: React.FC = () => {
   const activeGroqKey = useMemo(() => {
     if (sttApiKey && sttApiKey.trim()) return sttApiKey.trim();
     const found = providers.find((p) =>
-      p.name.toLowerCase().includes('groq') ||
-      p.name.toLowerCase().includes('грок') ||
-      p.baseUrl.includes('groq')
+      p.name?.toLowerCase().includes('groq') ||
+      p.name?.toLowerCase().includes('грок') ||
+      p.baseUrl?.includes('groq')
     );
     return found?.apiKey || '';
   }, [sttApiKey, providers]);

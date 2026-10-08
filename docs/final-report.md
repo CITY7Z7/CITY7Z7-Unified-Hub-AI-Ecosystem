@@ -115,6 +115,11 @@
 | **Smoke API: verify** | `POST /admin/api/auth/verify` | 200 OK при пароле `admin` | 200 OK, `{"success": true}` | ✅ PASS |
 | **Smoke API: runners** | `GET /admin/api/runners` (x-admin-password) | 200 OK, список раннеров | 200 OK, `bun_local`, `bash_local` | ✅ PASS |
 | **Smoke UI: root** | `GET /` | 200 OK, HTML с меню | 200 OK, загрузка Lab + ToolHub | ✅ PASS |
+| **ReAct: listTools ("/")** | `GET /` (Accept: application/json) | 200 OK, 3 корневые папки | 200 OK (`/meta`, `/bench`, `/sublime`) | ✅ PASS |
+| **ReAct: callTool execution** | `POST /meta/categories/list-categories` | 200 OK, нативный запуск Bun | 200 OK, `{"success": true, "data": ...}` | ✅ PASS |
+| **GraphMem: /api/dialogs** | `GET /api/dialogs` | 200 OK, массив диалогов | 200 OK, `[]` (без 404 ошибок) | ✅ PASS |
+| **MCP Pool API** | `GET /admin/api/pool` | 200 OK, статус процессов | 200 OK, `[]` | ✅ PASS |
+| **ChatInput Hotkeys** | `onKeyDown` / `onKeyUp` | Безопасная обработка e.key | Исключены TypeError при undefined key | ✅ PASS |
 
 ---
 
