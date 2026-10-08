@@ -1,4 +1,13 @@
 {
+  "header": {
+    "ai_studio": "AI Студия",
+    "skills": "Навыки",
+    "runners": "Раннеры",
+    "processes": "Пул MCP",
+    "logs": "Журнал Аудита",
+    "playground": "Плейграунд",
+    "online": "Хаб Онлайн :3000"
+  },
   "nav": {
     "skills": "Дерево Навыков",
     "runners": "Раннеры",

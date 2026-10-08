@@ -10,6 +10,14 @@ import Editor from "@monaco-editor/react";
 import { useI18n } from "@/lib/i18n";
 import { useTheme } from "@/lib/useTheme";
 
+const handleMonacoBeforeMount = (monaco: any) => {
+  if (monaco?.languages?.json) {
+    monaco.languages.json?.jsonDefaults?.setDiagnosticsOptions?.({
+      validate: false,
+    });
+  }
+};
+
 export function Logs() {
   const { t } = useI18n();
   const { monacoTheme } = useTheme();
@@ -98,16 +106,16 @@ export function Logs() {
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      {/* Шапка */}
-      <div className="h-[74.4px] min-h-[74.4px] max-h-[74.4px] px-6 border-b border-border flex items-center justify-between shrink-0 box-border">
+    <div className="h-full flex flex-col overflow-hidden bg-[#eef1f5]">
+      {/* Шапка щита оператора */}
+      <div className="h-12 px-4 border-b border-slate-300 bg-white flex items-center justify-between shrink-0 shadow-2xs">
         <div className="flex items-center gap-3">
-          <span className="text-xs font-mono bg-blue-500/10 text-blue-600 dark:text-blue-400 px-2.5 py-1 rounded-full border border-blue-500/20 font-bold">
-            {t("logs.entries", { count: total })}
+          <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-700">
+            {t("nav.logs")} // {t("logs.entries", { count: total })}
           </span>
 
           {/* Селектор количества записей на страницу */}
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
+          <div className="flex items-center gap-1.5 text-xs text-slate-600 font-mono">
             <span>{t("logs.per_page")}</span>
             <select
               value={limit}
@@ -115,7 +123,7 @@ export function Logs() {
                 const newLimit = parseInt(e.target.value);
                 setLimit(newLimit);
               }}
-              className="h-7 text-xs font-mono border border-border rounded-md bg-background px-1.5 text-foreground focus:outline-none"
+              className="h-7 text-xs font-mono border border-slate-300 rounded bg-white px-1.5 text-slate-800 focus:outline-none"
             >
               <option value="25">25</option>
               <option value="50">50</option>
@@ -128,59 +136,70 @@ export function Logs() {
 
         <div className="flex items-center gap-2">
           <div className="relative w-64">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <Input 
               placeholder={t("common.filter_path")} 
-              className="pl-8 h-8 text-xs font-mono rounded-lg" 
+              className="pl-8 h-8 text-xs font-mono rounded border-slate-300 bg-white" 
               value={search} 
               onChange={e => handleSearchChange(e.target.value)} 
             />
           </div>
-          <Button variant="outline" size="sm" onClick={() => loadLogs()} className="h-8 text-xs rounded-lg">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => loadLogs()} 
+            className="h-8 text-xs rounded border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-700 cursor-pointer"
+          >
             <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`} /> {t("common.refresh")}
           </Button>
-          <Button variant="ghost" size="sm" onClick={clearLogs} className="h-8 text-destructive hover:bg-destructive/10 rounded-lg" title={t("common.clear")}>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={clearLogs} 
+            className="h-8 text-red-600 hover:bg-red-50 hover:text-red-700 rounded cursor-pointer" 
+            title={t("common.clear")}
+          >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>
 
-      {/* Рабочая область */}
+      {/* Рабочая область щита оператора */}
       <div className="p-4 flex-1 overflow-hidden min-h-0">
         <div className="grid grid-cols-12 gap-4 h-full">
           {/* Левый список логов */}
-          <div className="col-span-5 border border-border rounded-xl overflow-hidden flex flex-col bg-card">
-            <div className="bg-muted/40 p-2.5 text-[10px] font-mono uppercase font-bold text-muted-foreground border-b border-border flex justify-between shrink-0">
+          <div className="col-span-5 border border-slate-300 rounded bg-white overflow-hidden flex flex-col shadow-2xs">
+            <div className="bg-slate-100 p-2.5 text-[10px] font-mono uppercase font-bold text-slate-700 border-b border-slate-300 flex justify-between shrink-0">
               <span>{t("logs.recent")}</span>
               <span>{t("logs.status_time")}</span>
             </div>
 
-            <div className="flex-1 overflow-y-auto divide-y divide-border text-xs">
+            <div className="flex-1 overflow-y-auto divide-y divide-slate-200 text-xs">
               {logs.map(log => (
                 <div 
                   key={log.id} 
                   onClick={() => setSelectedLog(log)}
                   className={`p-2.5 cursor-pointer transition-colors flex items-center justify-between gap-2 ${
                     selectedLog?.id === log.id 
-                      ? "bg-blue-500/15 border-l-4 border-l-blue-600 text-foreground" 
-                      : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
+                      ? "bg-blue-50 border-l-4 border-l-blue-600 text-slate-900 font-medium" 
+                      : "hover:bg-slate-50 text-slate-600 hover:text-slate-900"
                   }`}
                 >
                   <div className="flex items-start gap-2 min-w-0">
                     {log.success ? (
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
                     ) : (
-                      <XCircle className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
+                      <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
                     )}
                     <div className="min-w-0">
-                      <div className="font-mono font-bold truncate text-[11px] text-foreground">{log.path}</div>
-                      <div className="text-[10px] text-muted-foreground truncate">
+                      <div className="font-mono font-bold truncate text-[11px] text-slate-900">{log.path}</div>
+                      <div className="text-[10px] text-slate-500 truncate">
                         {new Date(log.createdAt).toLocaleTimeString()} • {log.callerIp}
                       </div>
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded font-semibold text-foreground border border-border">
+                    <span className="text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded font-semibold text-slate-700 border border-slate-300">
                       {log.durationMs}ms
                     </span>
                   </div>
@@ -189,8 +208,8 @@ export function Logs() {
             </div>
 
             {/* Пагинатор списка */}
-            <div className="p-2 border-t border-border bg-muted/30 flex items-center justify-between text-xs font-mono shrink-0">
-              <span className="text-[10px] text-muted-foreground font-semibold">
+            <div className="p-2 border-t border-slate-300 bg-slate-50 flex items-center justify-between text-xs font-mono shrink-0">
+              <span className="text-[10px] text-slate-600 font-semibold">
                 {t("logs.page_info", { page, totalPages })}
               </span>
               <div className="flex items-center gap-1">
@@ -199,7 +218,7 @@ export function Logs() {
                   variant="outline" 
                   disabled={page <= 1 || loading}
                   onClick={() => loadLogs(page - 1)}
-                  className="h-6 w-6 rounded"
+                  className="h-6 w-6 rounded border-slate-300 bg-white"
                   title={t("logs.prev_page")}
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
@@ -209,7 +228,7 @@ export function Logs() {
                   variant="outline" 
                   disabled={page >= totalPages || loading}
                   onClick={() => loadLogs(page + 1)}
-                  className="h-6 w-6 rounded"
+                  className="h-6 w-6 rounded border-slate-300 bg-white"
                   title={t("logs.next_page")}
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -219,63 +238,78 @@ export function Logs() {
           </div>
 
           {/* Правая деталка лога */}
-          <div className="col-span-7 border border-border rounded-xl overflow-hidden flex flex-col bg-card">
+          <div className="col-span-7 border border-slate-300 rounded bg-white overflow-hidden flex flex-col shadow-2xs">
             {selectedLog ? (
               <div className="flex flex-col h-full">
-                <div className="bg-muted/40 p-3 border-b border-border flex items-center justify-between shrink-0">
+                <div className="bg-slate-50 p-3 border-b border-slate-300 flex items-center justify-between shrink-0">
                   <div>
-                    <div className="font-mono font-bold text-sm flex items-center gap-2 text-foreground">
-                      <Terminal className="h-4 w-4 text-blue-500" /> {selectedLog.path}
+                    <div className="font-mono font-bold text-xs flex items-center gap-2 text-slate-900">
+                      <Terminal className="h-4 w-4 text-blue-600" /> {selectedLog.path}
                     </div>
-                    <div className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                    <div className="text-[10px] text-slate-500 font-mono mt-0.5">
                       ID: {selectedLog.id} • {new Date(selectedLog.createdAt).toLocaleString()} • Duration: {selectedLog.durationMs}ms
                     </div>
                   </div>
-                  <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase border ${
+                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase border flex items-center gap-1.5 ${
                     selectedLog.success 
-                      ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30" 
-                      : "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-300" 
+                      : "bg-red-50 text-red-700 border-red-300"
                   }`}>
-                    {selectedLog.success ? "Success" : "Failed"}
+                    <span className={`w-1.5 h-1.5 rounded-full ${selectedLog.success ? "bg-emerald-600" : "bg-red-600"}`} />
+                    {selectedLog.success ? "SUCCESS" : "FAILED"}
                   </span>
                 </div>
 
                 <div className="flex-1 flex flex-col p-3.5 gap-3 overflow-y-auto font-mono text-xs">
                   {selectedLog.error && (
-                    <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 rounded-xl text-xs leading-relaxed">
+                    <div className="p-3 bg-red-50 border border-red-300 text-red-700 rounded text-xs leading-relaxed">
                       <strong>{t("logs.error_details")}</strong> {selectedLog.error}
                     </div>
                   )}
 
                   <div className="space-y-1">
-                    <span className="text-[10px] uppercase font-bold text-muted-foreground">{t("logs.payload_input")}</span>
-                    <div className="border border-border rounded-lg overflow-hidden bg-background">
+                    <span className="text-[10px] uppercase font-bold text-slate-500">{t("logs.payload_input")}</span>
+                    <div className="border border-slate-300 rounded overflow-hidden bg-white">
                       <Editor 
                         height="140px" 
                         defaultLanguage="json" 
                         theme={monacoTheme} 
                         value={formatJson(selectedLog.payload)} 
-                        options={{ readOnly: true, minimap: { enabled: false }, fontSize: 11, lineNumbers: 'off' }} 
+                        beforeMount={handleMonacoBeforeMount}
+                        options={{ 
+                          readOnly: true, 
+                          minimap: { enabled: false }, 
+                          fontSize: 11, 
+                          lineNumbers: 'off',
+                          renderValidationDecorations: 'off'
+                        }} 
                       />
                     </div>
                   </div>
 
                   <div className="space-y-1 flex-1 flex flex-col min-h-[200px]">
-                    <span className="text-[10px] uppercase font-bold text-muted-foreground">{t("logs.kernel_response")}</span>
-                    <div className="border border-border rounded-lg overflow-hidden flex-1 bg-background">
+                    <span className="text-[10px] uppercase font-bold text-slate-500">{t("logs.kernel_response")}</span>
+                    <div className="border border-slate-300 rounded overflow-hidden flex-1 bg-white">
                       <Editor 
                         height="100%" 
                         defaultLanguage="json" 
                         theme={monacoTheme} 
                         value={formatJson(selectedLog.result)} 
-                        options={{ readOnly: true, minimap: { enabled: false }, fontSize: 11, lineNumbers: 'off' }} 
+                        beforeMount={handleMonacoBeforeMount}
+                        options={{ 
+                          readOnly: true, 
+                          minimap: { enabled: false }, 
+                          fontSize: 11, 
+                          lineNumbers: 'off',
+                          renderValidationDecorations: 'off'
+                        }} 
                       />
                     </div>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground text-xs font-mono">
+              <div className="flex flex-col items-center justify-center h-full text-slate-500 text-xs font-mono">
                 {t("logs.empty_select")}
               </div>
             )}

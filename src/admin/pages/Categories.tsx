@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch"; 
 import { toast } from "sonner";
 import { 
-  Folder, Trash2, ChevronRight, ChevronDown, Layers, Terminal,
+  Folder, FolderTree, Trash2, ChevronRight, ChevronDown, Layers, Terminal,
   Globe, Zap, RefreshCw, Box, Plus, Activity, Save, Play, FileText, Code,
   Package, Sparkles, Beaker, RotateCcw, AlertCircle, Download, Upload, X
 } from "lucide-react";
@@ -63,6 +63,29 @@ const getEditorLanguage = (runnerId: string, runners: any[]) => {
   if (type.includes("python")) return "python";
   if (type.includes("bash") || type.includes("sh")) return "shell";
   return "javascript";
+};
+
+/**
+ * Отключение ложных срабатываний линтера TypeScript/JSON и красных подчёркиваний
+ */
+const handleMonacoBeforeMount = (monaco: any) => {
+  if (monaco?.languages?.typescript) {
+    monaco.languages.typescript.javascriptDefaults?.setDiagnosticsOptions?.({
+      noSemanticValidation: true,
+      noSyntaxValidation: true,
+      noSuggestionDiagnostics: true,
+    });
+    monaco.languages.typescript.typescriptDefaults?.setDiagnosticsOptions?.({
+      noSemanticValidation: true,
+      noSyntaxValidation: true,
+      noSuggestionDiagnostics: true,
+    });
+  }
+  if (monaco?.languages?.json) {
+    monaco.languages.json?.jsonDefaults?.setDiagnosticsOptions?.({
+      validate: false,
+    });
+  }
 };
 
 function RemoteSubTree({ 
@@ -754,18 +777,24 @@ export function Categories() {
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden relative">
-      {/* Шапка управления */}
-      <div className="h-[74.4px] min-h-[74.4px] max-h-[74.4px] px-6 border-b border-border flex items-center justify-end shrink-0 box-border">
+    <div className="h-full flex flex-col overflow-hidden relative bg-[#eef1f5]">
+      {/* Шапка управления щита оператора */}
+      <div className="h-12 px-4 border-b border-slate-300 bg-white flex items-center justify-between shrink-0 shadow-2xs">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-600">
+            {t("cats.explorer")} // {selectionMode === 'category' ? (editingCategoryId ? `NODE #${editingCategoryId}` : 'NEW NODE') : (editingToolId ? `TOOL #${editingToolId}` : 'NEW TOOL')}
+          </span>
+        </div>
+
         <div className="flex items-center gap-2">
           {/* Кнопка импорта с вызовом модалки */}
           <Button 
             size="sm" 
             variant="outline" 
             onClick={() => setImportModalOpen(true)} 
-            className="h-8 text-xs font-bold rounded-lg border-border"
+            className="h-8 text-xs font-semibold rounded border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-700"
           >
-            <Upload className="h-3.5 w-3.5 mr-1.5 text-emerald-600 dark:text-emerald-400" /> {t("common.import")}
+            <Upload className="h-3.5 w-3.5 mr-1.5 text-emerald-600" /> {t("common.import")}
           </Button>
 
           {/* Дропдаун меню Создания */}
@@ -773,26 +802,26 @@ export function Categories() {
             <Button 
               size="sm" 
               onClick={() => setCreateMenuOpen(prev => !prev)} 
-              className="h-8 text-xs bg-primary text-primary-foreground hover:bg-primary/90 font-bold rounded-lg shadow-sm"
+              className="h-8 text-xs bg-blue-600 text-white hover:bg-blue-700 font-semibold rounded border border-blue-700 shadow-2xs"
             >
-              <Plus className="h-4 w-4 mr-1" /> {t("cats.create_menu")}
+              <Plus className="h-3.5 w-3.5 mr-1" /> {t("cats.create_menu")}
               <ChevronDown className={`h-3.5 w-3.5 ml-1 transition-transform ${createMenuOpen ? "rotate-180" : ""}`} />
             </Button>
 
             {createMenuOpen && (
-              <div className="absolute right-0 mt-1 z-50 w-44 bg-card border border-border rounded-xl shadow-xl p-1 space-y-0.5 animate-in fade-in duration-150">
+              <div className="absolute right-0 mt-1 z-50 w-44 bg-white border border-slate-300 rounded shadow-md p-1 space-y-0.5 animate-in fade-in duration-100">
                 <button
                   onClick={startNewCategory}
-                  className="w-full text-left p-2 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-muted text-foreground transition-colors"
+                  className="w-full text-left px-2.5 py-1.5 rounded text-xs font-semibold flex items-center gap-2 hover:bg-slate-100 text-slate-800 transition-colors"
                 >
                   <Folder className="h-4 w-4 text-amber-500" />
                   <span>{t("cats.new_folder")}</span>
                 </button>
                 <button
                   onClick={() => startNewTool()}
-                  className="w-full text-left p-2 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-muted text-foreground transition-colors"
+                  className="w-full text-left px-2.5 py-1.5 rounded text-xs font-semibold flex items-center gap-2 hover:bg-slate-100 text-slate-800 transition-colors"
                 >
-                  <Terminal className="h-4 w-4 text-blue-500" />
+                  <Terminal className="h-4 w-4 text-blue-600" />
                   <span>{t("cats.new_tool")}</span>
                 </button>
               </div>
@@ -801,47 +830,51 @@ export function Categories() {
         </div>
       </div>
 
-      <div className="p-4 flex-1 overflow-hidden min-h-0">
+      <div className="p-3 flex-1 overflow-hidden min-h-0">
         <div className="grid grid-cols-12 gap-3 h-full">
-          {/* Левый проводник категорий */}
-          <div className="col-span-4 border border-border rounded-xl flex flex-col bg-card overflow-hidden">
-            <div className="p-2.5 border-b border-border bg-muted/40 text-xs font-bold uppercase text-muted-foreground flex justify-between shrink-0">
-              <span>{t("cats.explorer")}</span>
-              <span>{t("cats.items")}</span>
+          {/* Левый проводник категорий (Блок каталога) */}
+          <div className="col-span-4 border border-slate-300 rounded bg-white flex flex-col overflow-hidden shadow-2xs">
+            <div className="px-3 py-2 border-b border-slate-300 bg-slate-100 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-700 flex justify-between items-center shrink-0">
+              <span className="flex items-center gap-1.5">
+                <FolderTree className="h-3.5 w-3.5 text-slate-600" />
+                {t("cats.explorer")}
+              </span>
+              <span className="px-1.5 py-0.5 bg-slate-200/80 rounded text-[9px] text-slate-600">{categoryTree.length} {t("cats.items").toLowerCase()}</span>
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
               {categoryTree.map(root => <TreeItem key={root.id} item={root} depth={0} />)}
             </div>
           </div>
 
-          {/* Правая рабочая область */}
-          <div className="col-span-8 border border-border rounded-xl flex flex-col bg-card overflow-hidden p-3.5 gap-3 overflow-y-auto text-xs">
+          {/* Правая рабочая область оператора (Блок параметров и исполнения) */}
+          <div className="col-span-8 border border-slate-300 rounded bg-white flex flex-col overflow-y-auto p-4 gap-3 shadow-2xs min-h-0 text-xs">
             {selectionMode === 'category' && (
-              <div className="flex flex-col h-full space-y-3">
-                <div className="flex justify-between items-center border-b border-border pb-2">
-                  <span className="font-bold uppercase text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                    <Folder className="h-4 w-4 text-amber-500" /> 
+              <div className="flex flex-col min-h-full space-y-3 pb-6">
+                <div className="flex justify-between items-center border-b border-slate-300 pb-2.5">
+                  <span className="font-mono font-bold uppercase text-amber-700 text-xs flex items-center gap-1.5">
+                    <Folder className="h-4 w-4 text-amber-600" /> 
                     {editingCategoryId ? t("cats.edit_folder", { id: editingCategoryId }) : t("cats.new_folder_title")}
                   </span>
                   
                   <div className="flex items-center gap-2">
                     {editingCategoryId && (
-                      <Button size="sm" variant="outline" onClick={() => handleExportCategory(editingCategoryId, categoryForm.name)} className="h-7 text-xs text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10">
+                      <Button size="sm" variant="outline" onClick={() => handleExportCategory(editingCategoryId, categoryForm.name)} className="h-8 text-xs text-amber-700 border-slate-300 bg-amber-50/50 hover:bg-amber-100/60 font-semibold rounded">
                         <Download className="h-3.5 w-3.5 mr-1" /> {t("cats.export_pack")}
                       </Button>
                     )}
-                    <Button size="sm" onClick={handleCategorySubmit} className="h-7 text-xs bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg shadow-sm">
+                    <Button size="sm" onClick={handleCategorySubmit} className="h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded border border-blue-700 shadow-2xs">
                       <Save className="h-3.5 w-3.5 mr-1" /> {editingCategoryId ? t("cats.save_folder") : t("cats.create_folder")}
                     </Button>
                   </div>
                 </div>
 
-                <div className="flex bg-muted p-1 rounded-lg shrink-0 border border-border">
+                {/* Селектор типа узла */}
+                <div className="flex bg-slate-100 p-1 rounded border border-slate-300 shrink-0">
                   {(['LOCAL', 'REMOTE', 'MCP'] as CategoryType[]).map((typeItem) => (
                     <button
                       key={typeItem} onClick={() => setCategoryForm({ ...categoryForm, type: typeItem })}
-                      className={`flex-1 py-1 text-xs font-bold rounded-md transition-all ${
-                        categoryForm.type === typeItem ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                      className={`flex-1 py-1 text-xs font-mono font-bold rounded transition-all ${
+                        categoryForm.type === typeItem ? "bg-white text-slate-900 border border-slate-300 shadow-2xs" : "text-slate-600 hover:text-slate-900 border border-transparent"
                       }`}
                     >
                       {typeItem}
@@ -849,22 +882,32 @@ export function Categories() {
                   ))}
                 </div>
 
-                <div className="grid grid-cols-12 gap-2">
-                  <div className="col-span-8 space-y-1">
-                    <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t("cats.category_name")}</Label>
-                    <Input value={categoryForm.name} onChange={e => setCategoryForm({...categoryForm, name: e.target.value})} placeholder="SmartHome" className="h-8 text-xs font-bold" />
+                {/* Спецификация папки */}
+                <div className="border border-slate-300 rounded bg-slate-50/50 p-3 space-y-2.5 shrink-0">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-600">
+                      NODE SPECIFICATION
+                    </span>
+                    <div className="flex items-center gap-2 pr-1">
+                      <span className="flex items-center gap-1.5 text-[11px] font-mono font-semibold text-slate-700">
+                        <span className={`w-2 h-2 rounded-full ${categoryForm.isActive ? 'bg-emerald-500 ring-2 ring-emerald-200' : 'bg-slate-300'} shrink-0`} />
+                        {t("common.active")}
+                      </span>
+                      <Switch checked={categoryForm.isActive} onCheckedChange={v => setCategoryForm({...categoryForm, isActive: v})} className="shrink-0" />
+                    </div>
                   </div>
-                  <div className="col-span-4 flex items-center justify-end gap-2 pt-4">
-                    <Label className="text-xs font-bold">{t("common.active")}</Label>
-                    <Switch checked={categoryForm.isActive} onCheckedChange={v => setCategoryForm({...categoryForm, isActive: v})} />
+
+                  <div className="space-y-1">
+                    <Label className="text-[10px] font-mono uppercase font-bold text-slate-500">{t("cats.category_name")}</Label>
+                    <Input value={categoryForm.name} onChange={e => setCategoryForm({...categoryForm, name: e.target.value})} placeholder="SmartHome" className="h-8 text-xs font-semibold bg-white border-slate-300" />
                   </div>
                 </div>
 
                 {(categoryForm.type === 'LOCAL' || categoryForm.type === 'MCP') && (
                   <div className="space-y-1">
-                    <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t("cats.parent_folder")}</Label>
+                    <Label className="text-[10px] font-mono uppercase font-bold text-slate-500">{t("cats.parent_folder")}</Label>
                     <select 
-                      className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      className="w-full h-8 rounded border border-slate-300 bg-white px-2.5 text-xs font-mono text-slate-800 focus:outline-hidden focus:ring-1 focus:ring-blue-600"
                       value={categoryForm.parentId} onChange={e => setCategoryForm({...categoryForm, parentId: e.target.value})}
                     >
                       <option value="">{t("cats.root_option")}</option>
@@ -876,62 +919,62 @@ export function Categories() {
                 )}
 
                 {categoryForm.type === 'REMOTE' && (
-                  <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl space-y-2.5">
+                  <div className="p-3 bg-blue-50/50 border border-blue-300 rounded space-y-2.5">
                     <div className="space-y-1">
-                      <Label className="text-[10px] uppercase font-bold text-blue-600 dark:text-blue-400">{t("cats.remote_url")}</Label>
-                      <Input value={categoryForm.remoteUrl} onChange={e => setCategoryForm({...categoryForm, remoteUrl: e.target.value})} placeholder="http://192.168.1.10:3000" className="h-8 text-xs bg-background" />
+                      <Label className="text-[10px] font-mono uppercase font-bold text-blue-700">{t("cats.remote_url")}</Label>
+                      <Input value={categoryForm.remoteUrl} onChange={e => setCategoryForm({...categoryForm, remoteUrl: e.target.value})} placeholder="http://192.168.1.10:3000" className="h-8 text-xs font-mono bg-white border-slate-300" />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-[10px] uppercase font-bold text-blue-600 dark:text-blue-400">{t("cats.remote_token")}</Label>
-                      <Input value={categoryForm.remoteToken} onChange={e => setCategoryForm({...categoryForm, remoteToken: e.target.value})} placeholder="x-agent-password" className="h-8 text-xs bg-background" />
+                      <Label className="text-[10px] font-mono uppercase font-bold text-blue-700">{t("cats.remote_token")}</Label>
+                      <Input value={categoryForm.remoteToken} onChange={e => setCategoryForm({...categoryForm, remoteToken: e.target.value})} placeholder="x-agent-password" className="h-8 text-xs font-mono bg-white border-slate-300" />
                     </div>
                   </div>
                 )}
 
                 {categoryForm.type === 'MCP' && (
-                  <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-xl space-y-2.5">
+                  <div className="p-3 bg-purple-50/40 border border-purple-300 rounded space-y-2.5">
                     <div className="grid grid-cols-3 gap-2">
                       <div className="space-y-1">
-                        <Label className="text-[10px] uppercase font-bold text-purple-600 dark:text-purple-400">{t("cats.mcp_command")}</Label>
-                        <Input value={categoryForm.mcpCommand} onChange={e => setCategoryForm({...categoryForm, mcpCommand: e.target.value})} placeholder="bunx" className="h-8 text-xs bg-background" />
+                        <Label className="text-[10px] font-mono uppercase font-bold text-purple-700">{t("cats.mcp_command")}</Label>
+                        <Input value={categoryForm.mcpCommand} onChange={e => setCategoryForm({...categoryForm, mcpCommand: e.target.value})} placeholder="bunx" className="h-8 text-xs font-mono bg-white border-slate-300" />
                       </div>
                       <div className="col-span-2 space-y-1">
-                        <Label className="text-[10px] uppercase font-bold text-purple-600 dark:text-purple-400">{t("cats.mcp_args")}</Label>
-                        <Input value={categoryForm.mcpArgs} onChange={e => setCategoryForm({...categoryForm, mcpArgs: e.target.value})} placeholder="@mcp/server-puppeteer" className="h-8 text-xs bg-background" />
+                        <Label className="text-[10px] font-mono uppercase font-bold text-purple-700">{t("cats.mcp_args")}</Label>
+                        <Input value={categoryForm.mcpArgs} onChange={e => setCategoryForm({...categoryForm, mcpArgs: e.target.value})} placeholder="@mcp/server-puppeteer" className="h-8 text-xs font-mono bg-white border-slate-300" />
                       </div>
                     </div>
                     
                     <div className="space-y-1">
-                      <Label className="text-[10px] uppercase font-bold text-purple-600 dark:text-purple-400">{t("cats.mcp_env")}</Label>
-                      <div className="border border-border rounded-lg bg-background overflow-hidden h-20">
-                        <Editor height="100%" defaultLanguage="json" theme={monacoTheme} value={categoryForm.mcpEnv} onChange={val => setCategoryForm({...categoryForm, mcpEnv: val || "{}"})} options={{ minimap: { enabled: false }, fontSize: 11, lineNumbers: 'off' }} />
+                      <Label className="text-[10px] font-mono uppercase font-bold text-purple-700">{t("cats.mcp_env")}</Label>
+                      <div className="border border-slate-300 rounded bg-white overflow-hidden h-20">
+                        <Editor height="100%" defaultLanguage="json" theme={monacoTheme} value={categoryForm.mcpEnv} onChange={val => setCategoryForm({...categoryForm, mcpEnv: val || "{}"})} beforeMount={handleMonacoBeforeMount} options={{ minimap: { enabled: false }, fontSize: 11, lineNumbers: 'off', renderValidationDecorations: 'off' }} />
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-1">
-                      <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase">{t("cats.mcp_stateful")}</span>
-                      <Switch checked={categoryForm.mcpIsStateful} onCheckedChange={v => setCategoryForm({ ...categoryForm, mcpIsStateful: v })} />
+                    <div className="flex items-center justify-between pt-1 pr-1">
+                      <span className="text-[10px] font-mono font-bold text-purple-700 uppercase">{t("cats.mcp_stateful")}</span>
+                      <Switch checked={categoryForm.mcpIsStateful} onCheckedChange={v => setCategoryForm({ ...categoryForm, mcpIsStateful: v })} className="shrink-0" />
                     </div>
                   </div>
                 )}
 
                 <div className="space-y-1 flex-1 flex flex-col min-h-[160px]">
-                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t("cats.append_prompt")}</Label>
-                  <div className="border border-border rounded-lg flex-1 overflow-hidden bg-background">
-                    <Editor height="100%" defaultLanguage="markdown" theme={monacoTheme} value={categoryForm.appendPrompt} onChange={val => setCategoryForm({...categoryForm, appendPrompt: val || ""})} options={{ minimap: { enabled: false }, fontSize: 11, lineNumbers: 'off', wordWrap: 'on' }} />
+                  <Label className="text-[10px] font-mono uppercase font-bold text-slate-500">{t("cats.append_prompt")}</Label>
+                  <div className="border border-slate-300 rounded flex-1 overflow-hidden bg-white">
+                    <Editor height="100%" defaultLanguage="markdown" theme={monacoTheme} value={categoryForm.appendPrompt} onChange={val => setCategoryForm({...categoryForm, appendPrompt: val || ""})} beforeMount={handleMonacoBeforeMount} options={{ minimap: { enabled: false }, fontSize: 11, lineNumbers: 'off', wordWrap: 'on', renderValidationDecorations: 'off' }} />
                   </div>
                 </div>
               </div>
             )}
 
             {selectionMode === 'local_tool' && (
-              <div className="flex flex-col h-full space-y-2">
+              <div className="flex flex-col min-h-full space-y-3 pb-6">
                 {inspectingVersionId && (
-                  <div className="bg-amber-500 text-amber-950 px-3 py-1 text-xs font-bold flex items-center justify-between shrink-0 rounded-lg">
-                    <span className="flex items-center gap-1.5">
-                      <AlertCircle className="h-3.5 w-3.5" /> {t("tool.inspecting_revision")}
+                  <div className="bg-amber-100 text-amber-900 border border-amber-300 px-3 py-1.5 text-xs font-semibold flex items-center justify-between shrink-0 rounded">
+                    <span className="flex items-center gap-1.5 font-mono text-[11px]">
+                      <AlertCircle className="h-4 w-4 text-amber-600" /> {t("tool.inspecting_revision")}
                     </span>
-                    <Button size="sm" variant="ghost" className="h-5 px-2 text-[10px] text-amber-950 font-bold hover:bg-amber-400" onClick={() => {
+                    <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px] font-mono font-bold text-amber-900 hover:bg-amber-200" onClick={() => {
                       const currentTool = tools.find(tItem => tItem.id === editingToolId);
                       if (currentTool) selectLocalToolForEdit(currentTool);
                     }}>
@@ -940,83 +983,115 @@ export function Categories() {
                   </div>
                 )}
 
-                <div className="flex justify-between items-center border-b border-border pb-2 shrink-0">
-                  <span className="font-bold uppercase text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
-                    <Terminal className="h-4 w-4" />
-                    {editingToolId ? t("tool.editing", { name: toolForm.name }) : t("tool.new")}
-                  </span>
+                {/* Шапка формы инструмента */}
+                <div className="flex justify-between items-center border-b border-slate-300 pb-2.5 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <Terminal className="h-4 w-4 text-blue-600" />
+                    <span className="font-mono font-bold uppercase text-slate-800 text-xs">
+                      {editingToolId ? t("tool.editing", { name: toolForm.name }) : t("tool.new")}
+                    </span>
+                    {editingToolId && (
+                      <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[10px] border border-slate-300">
+                        #{editingToolId}
+                      </span>
+                    )}
+                  </div>
                   
                   <div className="flex items-center gap-2">
                     {editingToolId && (
                       <>
-                        <Button size="sm" variant="outline" onClick={() => handleExportTool(editingToolId, toolForm.name)} className="h-7 text-xs text-blue-600 dark:text-blue-400 border-blue-500/30 hover:bg-blue-500/10">
+                        <Button size="sm" variant="outline" onClick={() => handleExportTool(editingToolId, toolForm.name)} className="h-8 text-xs text-slate-700 border-slate-300 bg-slate-50 hover:bg-slate-100 font-semibold rounded">
                           <Download className="h-3.5 w-3.5 mr-1" /> {t("tool.export")}
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={handleDeleteTool} className="h-7 text-xs text-destructive hover:bg-destructive/10">
+                        <Button size="sm" variant="outline" onClick={handleDeleteTool} className="h-8 text-xs text-red-600 border-red-200 bg-red-50 hover:bg-red-100 font-semibold rounded">
                           <Trash2 className="h-3.5 w-3.5 mr-1" /> {t("tool.delete")}
                         </Button>
                       </>
                     )}
-                    <Button size="sm" onClick={handleToolSubmit} className="h-7 text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-sm">
+                    <Button size="sm" onClick={handleToolSubmit} className="h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded border border-blue-700 shadow-2xs">
                       <Save className="h-3.5 w-3.5 mr-1" /> {editingToolId ? t("cats.save_tool") : t("cats.create_tool")}
                     </Button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-12 gap-2 shrink-0">
-                  <div className="col-span-3">
-                    <Input placeholder={t("tool.name")} value={toolForm.name} onChange={e => {
-                      const newName = e.target.value;
-                      setToolForm(prev => {
-                        const isSlugUntouched = !prev.slug || prev.slug === prev.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-                        const autoSlug = newName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-                        return {
-                          ...prev,
-                          name: newName,
-                          slug: (!editingToolId && isSlugUntouched) ? autoSlug : prev.slug
-                        };
-                      });
-                    }} className="h-8 text-xs font-bold" />
+                {/* Блок 1: Спецификация и параметры исполнения (Тумблеры и поля) */}
+                <div className="border border-slate-300 rounded bg-slate-50/50 p-3 space-y-2.5 shrink-0">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-600">
+                      SPECIFICATION & RUNTIME
+                    </span>
+                    {/* Переключатель Active с надёжным отступом pr-1 и индикатором */}
+                    <div className="flex items-center gap-2 pr-1 shrink-0">
+                      <span className="flex items-center gap-1.5 text-[11px] font-mono font-semibold text-slate-700">
+                        <span className={`w-2 h-2 rounded-full ${toolForm.isActive ? 'bg-emerald-500 ring-2 ring-emerald-200' : 'bg-slate-300'} shrink-0`} />
+                        {t("common.active")}
+                      </span>
+                      <Switch 
+                        checked={toolForm.isActive} 
+                        onCheckedChange={v => setToolForm({ ...toolForm, isActive: v })} 
+                        className="shrink-0"
+                      />
+                    </div>
                   </div>
-                  <div className="col-span-3">
-                    <Input placeholder={t("tool.slug")} value={toolForm.slug} onChange={e => setToolForm({...toolForm, slug: e.target.value})} className="h-8 text-xs font-mono" />
-                  </div>
-                  <div className="col-span-3 flex items-center gap-1">
-                    <span className="text-[10px] uppercase font-bold text-muted-foreground">{t("tool.runner")}</span>
-                    <select disabled={toolForm.isMcpProxy} className="h-8 w-full border border-border rounded-lg text-xs px-2 bg-background font-mono text-foreground focus:outline-none" value={toolForm.runnerId} onChange={e => setToolForm({...toolForm, runnerId: e.target.value})}>
-                      {runners.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-                    </select>
-                  </div>
-                  <div className="col-span-2 flex items-center gap-1">
-                    <span className="text-[9px] uppercase font-bold text-muted-foreground">{t("tool.timeout")}</span>
-                    <Input type="number" value={toolForm.timeoutMs} onChange={e => setToolForm({...toolForm, timeoutMs: parseInt(e.target.value) || 30000})} className="h-8 text-xs font-mono px-1.5" />
-                  </div>
-                  <div className="col-span-1 flex items-center justify-end" title={t("common.active")}>
-                    <Switch checked={toolForm.isActive} onCheckedChange={v => setToolForm({ ...toolForm, isActive: v })} />
+
+                  <div className="grid grid-cols-12 gap-2.5 items-end">
+                    <div className="col-span-4 space-y-1">
+                      <Label className="text-[10px] font-mono uppercase font-bold text-slate-500">{t("tool.name")}</Label>
+                      <Input placeholder={t("tool.name")} value={toolForm.name} onChange={e => {
+                        const newName = e.target.value;
+                        setToolForm(prev => {
+                          const isSlugUntouched = !prev.slug || prev.slug === prev.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+                          const autoSlug = newName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+                          return {
+                            ...prev,
+                            name: newName,
+                            slug: (!editingToolId && isSlugUntouched) ? autoSlug : prev.slug
+                          };
+                        });
+                      }} className="h-8 text-xs font-semibold bg-white border-slate-300" />
+                    </div>
+                    <div className="col-span-3 space-y-1">
+                      <Label className="text-[10px] font-mono uppercase font-bold text-slate-500">{t("tool.slug")}</Label>
+                      <Input placeholder={t("tool.slug")} value={toolForm.slug} onChange={e => setToolForm({...toolForm, slug: e.target.value})} className="h-8 text-xs font-mono bg-white border-slate-300" />
+                    </div>
+                    <div className="col-span-3 space-y-1">
+                      <Label className="text-[10px] font-mono uppercase font-bold text-slate-500">{t("tool.runner")}</Label>
+                      <select disabled={toolForm.isMcpProxy} className="h-8 w-full border border-slate-300 rounded text-xs px-2 bg-white font-mono text-slate-800 focus:outline-hidden focus:ring-1 focus:ring-blue-600 disabled:opacity-50" value={toolForm.runnerId} onChange={e => setToolForm({...toolForm, runnerId: e.target.value})}>
+                        {runners.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="col-span-2 space-y-1">
+                      <Label className="text-[10px] font-mono uppercase font-bold text-slate-500">{t("tool.timeout")}</Label>
+                      <Input type="number" value={toolForm.timeoutMs} onChange={e => setToolForm({...toolForm, timeoutMs: parseInt(e.target.value) || 30000})} className="h-8 text-xs font-mono px-2 bg-white border-slate-300" />
+                    </div>
                   </div>
                 </div>
 
-                <div className="p-2.5 bg-purple-500/10 border border-purple-500/20 rounded-xl space-y-1.5 text-xs shrink-0">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 font-bold text-purple-600 dark:text-purple-400">
-                      <Zap className="h-3.5 w-3.5" />
+                {/* Блок 2: Режим MCP Proxy (Не обрезается краем контейнера) */}
+                <div className="border border-purple-300 bg-purple-50/40 rounded p-3 space-y-2 text-xs shrink-0">
+                  <div className="flex items-center justify-between pr-2">
+                    <div className="flex items-center gap-2 font-bold text-purple-800 text-[11px] font-mono uppercase tracking-wide">
+                      <Zap className="h-3.5 w-3.5 text-purple-600" />
                       <span>{t("tool.mcp_proxy_mode")}</span>
                     </div>
-                    <Switch 
-                      checked={toolForm.isMcpProxy} 
-                      onCheckedChange={v => {
-                        setToolForm({...toolForm, isMcpProxy: v});
-                        if (v) setActiveToolTab("schema");
-                      }} 
-                    />
+                    <div className="flex items-center gap-2 pr-1 shrink-0">
+                      <Switch 
+                        checked={toolForm.isMcpProxy} 
+                        onCheckedChange={v => {
+                          setToolForm({...toolForm, isMcpProxy: v});
+                          if (v) setActiveToolTab("schema");
+                        }} 
+                        className="shrink-0"
+                      />
+                    </div>
                   </div>
 
                   {toolForm.isMcpProxy && (
-                    <div className="grid grid-cols-2 gap-2 pt-1 animate-in fade-in duration-200">
-                      <div className="space-y-0.5">
-                        <Label className="text-[9px] font-bold uppercase text-purple-600 dark:text-purple-400">{t("tool.mcp_source")}</Label>
+                    <div className="grid grid-cols-2 gap-2.5 pt-1 animate-in fade-in duration-100">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-mono font-bold uppercase text-purple-700">{t("tool.mcp_source")}</Label>
                         <select 
-                          className="h-8 w-full border border-border rounded-lg text-xs px-2 bg-background font-mono text-foreground focus:outline-none"
+                          className="h-8 w-full border border-slate-300 rounded text-xs px-2 bg-white font-mono text-slate-800 focus:outline-hidden"
                           value={toolForm.mcpSourceId} 
                           onChange={e => setToolForm({...toolForm, mcpSourceId: e.target.value})}
                         >
@@ -1026,188 +1101,306 @@ export function Categories() {
                           ))}
                         </select>
                       </div>
-                      <div className="space-y-0.5">
-                        <Label className="text-[9px] font-bold uppercase text-purple-600 dark:text-purple-400">{t("tool.mcp_method")}</Label>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-mono font-bold uppercase text-purple-700">{t("tool.mcp_method")}</Label>
                         <Input 
                           placeholder="e.g. create_issue" 
                           value={toolForm.mcpMethodName} 
                           onChange={e => setToolForm({...toolForm, mcpMethodName: e.target.value})}
-                          className="h-8 text-xs font-mono bg-background"
+                          className="h-8 text-xs font-mono bg-white border-slate-300"
                         />
                       </div>
                     </div>
                   )}
                 </div>
 
-                <div className="flex items-center gap-2 text-xs shrink-0 relative">
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground shrink-0">{t("tool.folder_binding")}</span>
-                  
-                  {/* Кнопка открытия селектора */}
-                  <div 
-                    onClick={() => setFolderDropdownOpen(prev => !prev)}
-                    className={`flex-1 border rounded-lg p-1.5 min-h-[34px] bg-background cursor-pointer flex items-center justify-between gap-2 transition-all ${
-                      toolForm.categoryIds.length === 0 ? "border-rose-500/50 bg-rose-500/5" : "border-border hover:border-muted-foreground/40"
-                    }`}
-                  >
-                    <div className="flex items-center gap-1.5 flex-wrap max-h-14 overflow-y-auto">
-                      {toolForm.categoryIds.length === 0 ? (
-                        <span className="text-[11px] text-rose-500 font-medium italic">{t("cats.pick_at_least_one_folder")}</span>
-                      ) : (
-                        flatCategories
-                          .filter(c => toolForm.categoryIds.includes(c.id))
-                          .map(c => (
-                            <span key={c.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[10px] font-mono font-bold">
-                              <Folder className="h-3 w-3 shrink-0" />
-                              {c.fullPath}
-                            </span>
-                          ))
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0 text-muted-foreground">
-                      <span className="text-[10px] font-bold bg-muted px-1.5 py-0.5 rounded font-mono">
-                        {toolForm.categoryIds.length}
-                      </span>
-                      <ChevronDown className={`h-3.5 w-3.5 transition-transform ${folderDropdownOpen ? "rotate-180" : ""}`} />
-                    </div>
+                {/* Блок 3: Контекст агента и привязка к директориям */}
+                <div className="border border-slate-300 rounded bg-slate-50/50 p-3 space-y-2.5 shrink-0">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-600">
+                      AGENT CONTEXT & BINDING
+                    </span>
                   </div>
 
-                  {/* Всплывающее меню с поиском */}
-                  {folderDropdownOpen && (
-                    <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-card border border-border rounded-xl shadow-xl p-2.5 space-y-2 animate-in fade-in duration-150">
-                      <div className="flex items-center justify-between pb-1 border-b border-border">
-                        <Input 
-                          placeholder={t("cats.search_folder_placeholder")} 
-                          value={folderSearchQuery}
-                          onChange={e => setFolderSearchQuery(e.target.value)}
-                          className="h-7 text-xs font-mono bg-background"
-                          autoFocus
-                        />
+                  <div className="space-y-1 relative">
+                    <Label className="text-[10px] font-mono uppercase font-bold text-slate-500">{t("tool.folder_binding")}</Label>
+                    
+                    {/* Кнопка открытия селектора */}
+                    <div 
+                      onClick={() => setFolderDropdownOpen(prev => !prev)}
+                      className={`w-full border rounded p-1.5 min-h-[34px] bg-white cursor-pointer flex items-center justify-between gap-2 transition-all ${
+                        toolForm.categoryIds.length === 0 ? "border-rose-400 bg-rose-50/30" : "border-slate-300 hover:border-slate-400"
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5 flex-wrap max-h-14 overflow-y-auto">
+                        {toolForm.categoryIds.length === 0 ? (
+                          <span className="text-[11px] text-rose-600 font-medium italic">{t("cats.pick_at_least_one_folder")}</span>
+                        ) : (
+                          flatCategories
+                            .filter(c => toolForm.categoryIds.includes(c.id))
+                            .map(c => (
+                              <span key={c.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-300 text-[10px] font-mono font-bold">
+                                <Folder className="h-3 w-3 text-amber-500 shrink-0" />
+                                {c.fullPath}
+                              </span>
+                            ))
+                        )}
                       </div>
+                      <div className="flex items-center gap-1 shrink-0 text-slate-500">
+                        <span className="text-[10px] font-bold bg-slate-100 px-1.5 py-0.5 rounded font-mono border border-slate-200">
+                          {toolForm.categoryIds.length}
+                        </span>
+                        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${folderDropdownOpen ? "rotate-180" : ""}`} />
+                      </div>
+                    </div>
 
-                      <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
-                        {flatCategories
-                          .filter(c => c.type === 'LOCAL')
-                          .filter(c => c.fullPath.toLowerCase().includes(folderSearchQuery.toLowerCase()) || c.name.toLowerCase().includes(folderSearchQuery.toLowerCase()))
-                          .map(c => {
-                            const isChecked = toolForm.categoryIds.includes(c.id);
-                            return (
-                              <div
-                                key={c.id}
-                                onClick={() => {
-                                  const ids = isChecked 
-                                    ? toolForm.categoryIds.filter(id => id !== c.id) 
-                                    : [...toolForm.categoryIds, c.id];
-                                  setToolForm({...toolForm, categoryIds: ids});
-                                }}
-                                className={`flex items-center justify-between p-1.5 rounded-lg border text-xs cursor-pointer transition-all ${
-                                  isChecked 
-                                    ? "bg-amber-500/15 border-amber-500/40 text-amber-600 dark:text-amber-400 font-bold" 
-                                    : "bg-background border-border hover:bg-muted/50 text-muted-foreground hover:text-foreground"
-                                }`}
-                              >
-                                <div className="flex items-center gap-2 truncate font-mono text-[11px]">
-                                  <Folder className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                                  <span className="truncate">{c.fullPath}</span>
+                    {/* Всплывающее меню с поиском папок */}
+                    {folderDropdownOpen && (
+                      <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white border border-slate-300 rounded shadow-lg p-2.5 space-y-2 animate-in fade-in duration-100">
+                        <div className="flex items-center justify-between pb-1 border-b border-slate-200">
+                          <Input 
+                            placeholder={t("cats.search_folder_placeholder")} 
+                            value={folderSearchQuery}
+                            onChange={e => setFolderSearchQuery(e.target.value)}
+                            className="h-7 text-xs font-mono bg-white border-slate-300"
+                            autoFocus
+                          />
+                        </div>
+
+                        <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
+                          {flatCategories
+                            .filter(c => c.type === 'LOCAL')
+                            .filter(c => c.fullPath.toLowerCase().includes(folderSearchQuery.toLowerCase()) || c.name.toLowerCase().includes(folderSearchQuery.toLowerCase()))
+                            .map(c => {
+                              const isChecked = toolForm.categoryIds.includes(c.id);
+                              return (
+                                <div
+                                  key={c.id}
+                                  onClick={() => {
+                                    const ids = isChecked 
+                                      ? toolForm.categoryIds.filter(id => id !== c.id) 
+                                      : [...toolForm.categoryIds, c.id];
+                                    setToolForm({...toolForm, categoryIds: ids});
+                                  }}
+                                  className={`flex items-center justify-between p-1.5 rounded border text-xs cursor-pointer transition-all ${
+                                    isChecked 
+                                      ? "bg-blue-50 border-blue-400 text-blue-800 font-semibold" 
+                                      : "bg-white border-slate-200 hover:bg-slate-50 text-slate-700"
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2 truncate font-mono text-[11px]">
+                                    <Folder className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                                    <span className="truncate">{c.fullPath}</span>
+                                  </div>
+                                  <input 
+                                    type="checkbox" 
+                                    checked={isChecked} 
+                                    onChange={() => {}} 
+                                    className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-0 cursor-pointer"
+                                  />
                                 </div>
-                                <input 
-                                  type="checkbox" 
-                                  checked={isChecked} 
-                                  onChange={() => {}} 
-                                  className="h-3.5 w-3.5 rounded border-border text-amber-500 focus:ring-0 cursor-pointer"
-                                />
-                              </div>
-                            );
-                          })}
+                              );
+                            })}
+                        </div>
+
+                        <div className="flex justify-between items-center pt-1 border-t border-slate-200 text-[10px]">
+                          <button 
+                            onClick={() => setToolForm({...toolForm, categoryIds: []})}
+                            className="text-rose-600 font-semibold hover:underline"
+                          >
+                            {t("cats.reset_selection")}
+                          </button>
+                          <Button 
+                            size="sm" 
+                            onClick={() => setFolderDropdownOpen(false)} 
+                            className="h-6 text-[10px] px-3 bg-blue-600 text-white font-semibold rounded"
+                          >
+                            {t("cats.done")}
+                          </Button>
+                        </div>
                       </div>
-
-                      <div className="flex justify-between items-center pt-1 border-t border-border text-[10px]">
-                        <button 
-                          onClick={() => setToolForm({...toolForm, categoryIds: []})}
-                          className="text-rose-500 font-bold hover:underline"
-                        >
-                          {t("cats.reset_selection")}
-                        </button>
-                        <Button 
-                          size="sm" 
-                          onClick={() => setFolderDropdownOpen(false)} 
-                          className="h-6 text-[10px] px-3 bg-primary text-primary-foreground font-bold rounded"
-                        >
-                          {t("cats.done")}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <Textarea placeholder={t("tool.agent_instructions")} value={toolForm.agentDescription} onChange={e => setToolForm({...toolForm, agentDescription: e.target.value})} className="h-14 text-xs p-2 leading-tight resize-none font-mono shrink-0 bg-background" />
-
-                <div className="flex justify-between items-center border-b border-border bg-muted/30 shrink-0 rounded-t-lg">
-                  <div className="flex">
-                    {[
-                      { id: 'code', label: t("tool.tab_code"), icon: Code, disabled: toolForm.isMcpProxy },
-                      { id: 'deps', label: t("tool.tab_deps"), icon: Package, disabled: toolForm.isMcpProxy },
-                      { id: 'schema', label: t("tool.tab_schema"), icon: Layers },
-                      { id: 'examples', label: t("tool.tab_examples"), icon: Beaker }
-                    ].map(tab => (
-                      <button key={tab.id} disabled={tab.disabled} onClick={() => setActiveToolTab(tab.id as any)} className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border-b-2 transition-colors ${activeToolTab === tab.id ? "border-blue-600 text-blue-600 bg-background" : "border-transparent text-muted-foreground hover:text-foreground"} ${tab.disabled && "opacity-30 cursor-not-allowed"}`}>
-                        <tab.icon className="h-3.5 w-3.5" /> <span>{tab.label}</span>
-                      </button>
-                    ))}
+                    )}
                   </div>
 
-                  {activeToolTab === 'schema' && (
-                    <div className="flex items-center gap-1 p-1">
-                      <button onClick={() => setSchemaSubTab("input")} className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${schemaSubTab === "input" ? "bg-background text-blue-600 dark:text-blue-400 shadow-sm border border-border" : "text-muted-foreground"}`}>Input Schema</button>
-                      <button onClick={() => setSchemaSubTab("output")} className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${schemaSubTab === "output" ? "bg-background text-emerald-600 dark:text-emerald-400 shadow-sm border border-border" : "text-muted-foreground"}`}>Output Schema</button>
-                    </div>
-                  )}
+                  <div className="space-y-1">
+                    <Label className="text-[10px] font-mono uppercase font-bold text-slate-500">{t("tool.agent_instructions")}</Label>
+                    <Textarea placeholder={t("tool.agent_instructions")} value={toolForm.agentDescription} onChange={e => setToolForm({...toolForm, agentDescription: e.target.value})} className="h-16 text-xs p-2 leading-tight resize-none font-mono shrink-0 bg-white border-slate-300" />
+                  </div>
                 </div>
 
-                <div className="flex-1 border border-border rounded-b-lg overflow-hidden min-h-[180px] bg-background relative">
-                  {toolForm.isMcpProxy && (activeToolTab === 'code' || activeToolTab === 'deps') && (
-                    <div className="absolute inset-0 bg-background/90 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-6 text-center">
-                      <Zap className="h-10 w-10 text-purple-500 mb-2 animate-pulse" />
-                      <h3 className="text-sm font-bold text-purple-600 dark:text-purple-400 uppercase">{t("tool.mcp_proxy_active")}</h3>
-                      <p className="text-xs text-muted-foreground mt-1 max-w-xs font-mono">{t("tool.mcp_proxy_desc")}</p>
-                    </div>
-                  )}
-
-                  {activeToolTab === 'code' && <Editor height="100%" language={getEditorLanguage(toolForm.runnerId, runners)} theme={monacoTheme} value={toolForm.code} onChange={val => setToolForm({...toolForm, code: val || ""})} options={{ minimap: { enabled: false }, fontSize: 11 }} />}
-                  {activeToolTab === 'deps' && <Editor height="100%" defaultLanguage="json" theme={monacoTheme} value={toolForm.packageJson} onChange={val => setToolForm({...toolForm, packageJson: val || ""})} options={{ minimap: { enabled: false }, fontSize: 11 }} />}
-                  {activeToolTab === 'schema' && (
-                    <div className="h-full flex flex-col min-h-0">
-                      <div className="p-1.5 text-[10px] font-bold uppercase bg-muted/40 border-b border-border text-muted-foreground px-3 flex justify-between items-center shrink-0">
-                        <span>{schemaSubTab === "input" ? t("tool.schema_input") : t("tool.schema_output")}</span>
+                {/* Блок 4: Рабочая панель кода и схем (Код, зависимости, контракты) */}
+                <div className="border border-slate-300 rounded overflow-hidden bg-white shrink-0 shadow-2xs">
+                  {/* Вкладки редактора */}
+                  <div className="flex justify-between items-center border-b border-slate-300 bg-slate-100 shrink-0">
+                    <div className="flex">
+                      {[
+                        { id: 'code', label: t("tool.tab_code"), icon: Code, disabled: toolForm.isMcpProxy },
+                        { id: 'deps', label: t("tool.tab_deps"), icon: Package, disabled: toolForm.isMcpProxy },
+                        { id: 'schema', label: t("tool.tab_schema"), icon: Layers },
+                        { id: 'examples', label: t("tool.tab_examples"), icon: Beaker }
+                      ].map(tab => (
                         <button 
-                          onClick={() => handleInferSchema(schemaSubTab, schemaSubTab === "input" ? localTestInput : localTestResult)}
-                          className="text-[9px] bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded flex items-center gap-1 font-bold hover:bg-blue-500/25 transition-colors"
+                          key={tab.id} 
+                          disabled={tab.disabled} 
+                          onClick={() => setActiveToolTab(tab.id as any)} 
+                          className={`flex items-center gap-1.5 px-3 py-2 text-xs font-mono font-bold border-r border-slate-300 transition-colors ${
+                            activeToolTab === tab.id 
+                              ? "bg-white text-blue-700 border-b-2 border-b-blue-600" 
+                              : "bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                          } ${tab.disabled && "opacity-35 cursor-not-allowed"}`}
                         >
-                          <Sparkles className="h-3 w-3" /> {t("tool.infer_from", { target: schemaSubTab === "input" ? t("tool.test_input") : t("tool.test_result") })}
+                          <tab.icon className="h-3.5 w-3.5" /> 
+                          <span className="uppercase">{tab.label}</span>
                         </button>
-                      </div>
-                      <div className="flex-1 min-h-0">
-                        {schemaSubTab === "input" 
-                          ? <Editor height="100%" defaultLanguage="json" theme={monacoTheme} value={toolForm.inputSchema} onChange={val => setToolForm({...toolForm, inputSchema: val || ""})} options={{ minimap: { enabled: false }, fontSize: 11 }} />
-                          : <Editor height="100%" defaultLanguage="json" theme={monacoTheme} value={toolForm.outputSchema !== "null" ? toolForm.outputSchema : "{}"} onChange={val => setToolForm({...toolForm, outputSchema: val || ""})} options={{ minimap: { enabled: false }, fontSize: 11 }} />
-                        }
-                      </div>
+                      ))}
                     </div>
-                  )}
-                  {activeToolTab === 'examples' && <Editor height="100%" defaultLanguage="json" theme={monacoTheme} value={toolForm.examples} onChange={val => setToolForm({...toolForm, examples: val || ""})} options={{ minimap: { enabled: false }, fontSize: 11 }} />}
+
+                    {activeToolTab === 'schema' && (
+                      <div className="flex items-center gap-1 p-1 pr-2">
+                        <button onClick={() => setSchemaSubTab("input")} className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold transition-all ${schemaSubTab === "input" ? "bg-white text-blue-700 shadow-2xs border border-slate-300" : "text-slate-500 hover:text-slate-900"}`}>{t("tool.schema_input")}</button>
+                        <button onClick={() => setSchemaSubTab("output")} className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold transition-all ${schemaSubTab === "output" ? "bg-white text-emerald-700 shadow-2xs border border-slate-300" : "text-slate-500 hover:text-slate-900"}`}>{t("tool.schema_output")}</button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Окно редактора Monaco */}
+                  <div className="h-[270px] min-h-[200px] bg-white relative">
+                    {toolForm.isMcpProxy && (activeToolTab === 'code' || activeToolTab === 'deps') && (
+                      <div className="absolute inset-0 bg-white/95 z-10 flex flex-col items-center justify-center p-6 text-center border-t border-slate-200">
+                        <Zap className="h-8 w-8 text-purple-600 mb-2" />
+                        <h3 className="text-xs font-mono font-bold text-purple-800 uppercase">{t("tool.mcp_proxy_active")}</h3>
+                        <p className="text-xs text-slate-600 mt-1 max-w-sm font-mono">{t("tool.mcp_proxy_desc")}</p>
+                      </div>
+                    )}
+
+                    {activeToolTab === 'code' && (
+                      <Editor 
+                        height="100%" 
+                        language={getEditorLanguage(toolForm.runnerId, runners)} 
+                        theme={monacoTheme} 
+                        value={toolForm.code} 
+                        onChange={val => setToolForm({...toolForm, code: val || ""})} 
+                        beforeMount={handleMonacoBeforeMount}
+                        options={{ 
+                          minimap: { enabled: false }, 
+                          fontSize: 12,
+                          fontFamily: "JetBrains Mono, Menlo, Monaco, Consolas, monospace",
+                          renderValidationDecorations: 'off',
+                          overviewRulerBorder: false,
+                          hideCursorInOverviewRuler: true,
+                          scrollbar: { verticalScrollbarSize: 6, horizontalScrollbarSize: 6 }
+                        }} 
+                      />
+                    )}
+
+                    {activeToolTab === 'deps' && (
+                      <Editor 
+                        height="100%" 
+                        defaultLanguage="json" 
+                        theme={monacoTheme} 
+                        value={toolForm.packageJson} 
+                        onChange={val => setToolForm({...toolForm, packageJson: val || ""})} 
+                        beforeMount={handleMonacoBeforeMount}
+                        options={{ 
+                          minimap: { enabled: false }, 
+                          fontSize: 12,
+                          fontFamily: "JetBrains Mono, Menlo, Monaco, Consolas, monospace",
+                          renderValidationDecorations: 'off',
+                          overviewRulerBorder: false,
+                          hideCursorInOverviewRuler: true,
+                          scrollbar: { verticalScrollbarSize: 6, horizontalScrollbarSize: 6 }
+                        }} 
+                      />
+                    )}
+
+                    {activeToolTab === 'schema' && (
+                      <div className="h-full flex flex-col min-h-0">
+                        <div className="p-1.5 text-[10px] font-mono font-bold uppercase bg-slate-50 border-b border-slate-300 text-slate-600 px-3 flex justify-between items-center shrink-0">
+                          <span>{schemaSubTab === "input" ? t("tool.schema_input") : t("tool.schema_output")}</span>
+                          <button 
+                            onClick={() => handleInferSchema(schemaSubTab, schemaSubTab === "input" ? localTestInput : localTestResult)}
+                            className="text-[9px] font-mono font-bold bg-blue-50 text-blue-700 border border-blue-300 px-2 py-0.5 rounded flex items-center gap-1 hover:bg-blue-100 transition-colors"
+                          >
+                            <Sparkles className="h-3 w-3" /> {t("tool.infer_from", { target: schemaSubTab === "input" ? t("tool.test_input") : t("tool.test_result") })}
+                          </button>
+                        </div>
+                        <div className="flex-1 min-h-0">
+                          {schemaSubTab === "input" ? (
+                            <Editor 
+                              height="100%" 
+                              defaultLanguage="json" 
+                              theme={monacoTheme} 
+                              value={toolForm.inputSchema} 
+                              onChange={val => setToolForm({...toolForm, inputSchema: val || ""})} 
+                              beforeMount={handleMonacoBeforeMount}
+                              options={{ 
+                                minimap: { enabled: false }, 
+                                fontSize: 12,
+                                fontFamily: "JetBrains Mono, Menlo, Monaco, Consolas, monospace",
+                                renderValidationDecorations: 'off',
+                                overviewRulerBorder: false,
+                                hideCursorInOverviewRuler: true,
+                                scrollbar: { verticalScrollbarSize: 6, horizontalScrollbarSize: 6 }
+                              }} 
+                            />
+                          ) : (
+                            <Editor 
+                              height="100%" 
+                              defaultLanguage="json" 
+                              theme={monacoTheme} 
+                              value={toolForm.outputSchema !== "null" ? toolForm.outputSchema : "{}"} 
+                              onChange={val => setToolForm({...toolForm, outputSchema: val || ""})} 
+                              beforeMount={handleMonacoBeforeMount}
+                              options={{ 
+                                minimap: { enabled: false }, 
+                                fontSize: 12,
+                                fontFamily: "JetBrains Mono, Menlo, Monaco, Consolas, monospace",
+                                renderValidationDecorations: 'off',
+                                overviewRulerBorder: false,
+                                hideCursorInOverviewRuler: true,
+                                scrollbar: { verticalScrollbarSize: 6, horizontalScrollbarSize: 6 }
+                              }} 
+                            />
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeToolTab === 'examples' && (
+                      <Editor 
+                        height="100%" 
+                        defaultLanguage="json" 
+                        theme={monacoTheme} 
+                        value={toolForm.examples} 
+                        onChange={val => setToolForm({...toolForm, examples: val || ""})} 
+                        beforeMount={handleMonacoBeforeMount}
+                        options={{ 
+                          minimap: { enabled: false }, 
+                          fontSize: 12,
+                          fontFamily: "JetBrains Mono, Menlo, Monaco, Consolas, monospace",
+                          renderValidationDecorations: 'off',
+                          overviewRulerBorder: false,
+                          hideCursorInOverviewRuler: true,
+                          scrollbar: { verticalScrollbarSize: 6, horizontalScrollbarSize: 6 }
+                        }} 
+                      />
+                    )}
+                  </div>
                 </div>
 
-                <div className="border border-border rounded-xl p-3 bg-muted/20 space-y-2 shrink-0">
-                  <div className="flex justify-between items-center text-[10px] font-bold uppercase">
-                    <div className="flex items-center gap-1 bg-muted p-0.5 rounded-lg border border-border">
+                {/* Блок 5: Панель Live Test Execution & История снимков (Всегда доступна, не уходит за край) */}
+                <div className="border border-slate-300 rounded bg-slate-50/60 p-3 space-y-2.5 shrink-0 shadow-2xs">
+                  <div className="flex justify-between items-center text-[10px] font-mono font-bold uppercase">
+                    <div className="flex items-center gap-1 bg-white p-0.5 rounded border border-slate-300">
                       <button 
                         onClick={() => setToolRightTab("test")}
-                        className={`px-2 py-0.5 rounded-md transition-all ${toolRightTab === "test" ? "bg-background text-blue-600 dark:text-blue-400 font-bold shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                        className={`px-2.5 py-1 rounded transition-all ${toolRightTab === "test" ? "bg-slate-100 text-blue-700 font-bold border border-slate-300 shadow-2xs" : "text-slate-600 hover:text-slate-900 border border-transparent"}`}
                       >
                         {t("tool.live_test")}
                       </button>
                       <button 
                         onClick={() => setToolRightTab("history")}
-                        className={`px-2 py-0.5 rounded-md transition-all ${toolRightTab === "history" ? "bg-background text-purple-600 dark:text-purple-400 font-bold shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                        className={`px-2.5 py-1 rounded transition-all ${toolRightTab === "history" ? "bg-slate-100 text-purple-700 font-bold border border-slate-300 shadow-2xs" : "text-slate-600 hover:text-slate-900 border border-transparent"}`}
                       >
                         {t("tool.history", { count: toolHistory.length })}
                       </button>
@@ -1221,7 +1414,7 @@ export function Categories() {
                             setActiveToolTab('schema');
                             setSchemaSubTab('input');
                           }}
-                          className="text-[9px] bg-blue-500/15 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded border border-blue-500/20 font-bold hover:bg-blue-500/25 transition-colors"
+                          className="text-[9px] font-mono font-bold bg-blue-50 text-blue-700 px-2 py-1 rounded border border-blue-300 hover:bg-blue-100 transition-colors"
                           title={t("tool.infer_input_btn")}
                         >
                           {t("tool.infer_input_btn")}
@@ -1235,14 +1428,14 @@ export function Categories() {
                                 setActiveToolTab('schema');
                                 setSchemaSubTab('output');
                               }}
-                              className="text-[9px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20 font-bold hover:bg-emerald-500/25 transition-colors"
+                              className="text-[9px] font-mono font-bold bg-emerald-50 text-emerald-700 px-2 py-1 rounded border border-emerald-300 hover:bg-emerald-100 transition-colors"
                               title={t("tool.infer_output_btn")}
                             >
                               {t("tool.infer_output_btn")}
                             </button>
                             <button 
                               onClick={addTestToExamples}
-                              className="text-[9px] bg-amber-500/15 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded border border-amber-500/20 font-bold hover:bg-amber-500/25 transition-colors"
+                              className="text-[9px] font-mono font-bold bg-amber-50 text-amber-700 px-2 py-1 rounded border border-amber-300 hover:bg-amber-100 transition-colors"
                               title={t("tool.add_few_shot")}
                             >
                               {t("tool.add_few_shot")}
@@ -1254,21 +1447,30 @@ export function Categories() {
                   </div>
 
                   {toolRightTab === "test" ? (
-                    <div className="grid grid-cols-12 gap-2">
-                      <div className="col-span-4 space-y-1">
-                        <Textarea placeholder='{"arg": "val"}' value={localTestInput} onChange={e => setLocalTestInput(e.target.value)} className="h-16 font-mono text-[10px] p-1.5 resize-none bg-background border border-border" />
-                        <Button size="sm" onClick={runLocalTest} className="h-7 w-full bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold rounded-lg shadow-sm">
-                          <Play className="h-3 w-3 mr-1 fill-current" /> {t("common.execute")}
+                    <div className="grid grid-cols-12 gap-3 items-stretch">
+                      <div className="col-span-4 flex flex-col gap-2">
+                        <Textarea 
+                          placeholder='{"arg": "val"}' 
+                          value={localTestInput} 
+                          onChange={e => setLocalTestInput(e.target.value)} 
+                          className="h-20 font-mono text-[11px] p-2 resize-none bg-white border-slate-300 rounded" 
+                        />
+                        <Button 
+                          size="sm" 
+                          onClick={runLocalTest} 
+                          className="h-8 w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded border border-blue-700 shadow-2xs cursor-pointer"
+                        >
+                          <Play className="h-3.5 w-3.5 mr-1.5 fill-current" /> {t("common.execute")}
                         </Button>
                       </div>
-                      <div className="col-span-8 border border-border rounded-lg bg-zinc-950 p-2 font-mono text-[10px] text-emerald-400 h-24 overflow-y-auto">
+                      <div className="col-span-8 border border-slate-800 rounded bg-zinc-950 p-2.5 font-mono text-[11px] text-emerald-400 h-28 overflow-y-auto">
                         <pre className="whitespace-pre-wrap">{JSON.stringify(localTestResult, null, 2)}</pre>
                       </div>
                     </div>
                   ) : (
-                    <div className="max-h-36 overflow-y-auto divide-y divide-border bg-background border border-border rounded-lg">
+                    <div className="max-h-40 overflow-y-auto divide-y divide-slate-200 bg-white border border-slate-300 rounded">
                       {toolHistory.length === 0 ? (
-                        <div className="p-3 text-center text-muted-foreground text-[10px]">
+                        <div className="p-3 text-center text-slate-500 font-mono text-[10px]">
                           {t("tool.empty_history")}
                         </div>
                       ) : (
@@ -1279,44 +1481,44 @@ export function Categories() {
                           const isCurrentSaved = !inspectingVersionId && matchesFormCode && matchingVersion?.id === ver.id;
 
                           return (
-                            <div key={ver.id} className={`p-2 space-y-1.5 transition-colors ${
-                              isInspectingThis ? "bg-amber-500/15" : isCurrentSaved ? "bg-emerald-500/10" : "hover:bg-muted/40"
+                            <div key={ver.id} className={`p-2.5 space-y-1.5 transition-colors ${
+                              isInspectingThis ? "bg-amber-50" : isCurrentSaved ? "bg-emerald-50/60" : "hover:bg-slate-50"
                             }`}>
                               <div className="flex justify-between items-center font-mono text-[10px]">
-                                <span className="font-bold text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
+                                <span className="font-bold text-slate-700 flex items-center gap-1.5">
                                   v{toolHistory.length - idx} (#{ver.id})
                                   {isCurrentSaved && (
-                                    <span className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[8px] px-1 rounded font-bold uppercase border border-emerald-500/30">
+                                    <span className="bg-emerald-100 text-emerald-800 text-[8px] px-1 py-0.5 rounded font-bold uppercase border border-emerald-300">
                                       {t("tool.current_saved")}
                                     </span>
                                   )}
                                   {isInspectingThis && (
-                                    <span className="bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[8px] px-1 rounded font-bold uppercase border border-amber-500/30">
+                                    <span className="bg-amber-100 text-amber-800 text-[8px] px-1 py-0.5 rounded font-bold uppercase border border-amber-300">
                                       {t("tool.inspecting")}
                                     </span>
                                   )}
                                 </span>
-                                <span className="text-muted-foreground text-[9px]">
+                                <span className="text-slate-500 text-[9px]">
                                   {new Date(ver.createdAt).toLocaleTimeString()} ({new Date(ver.createdAt).toLocaleDateString()})
                                 </span>
                               </div>
 
-                              <div className="text-[9px] text-muted-foreground font-mono bg-muted/60 p-1.5 rounded truncate">
+                              <div className="text-[10px] text-slate-600 font-mono bg-slate-100 p-1.5 rounded truncate border border-slate-200">
                                 {(ver.code || "").length > 0 ? (
-                                  <span className="text-foreground">{(ver.code || "").slice(0, 45)}...</span>
+                                  <span className="text-slate-800">{(ver.code || "").slice(0, 50)}...</span>
                                 ) : (
-                                  <span className="italic text-muted-foreground">{t("tool.empty_code")}</span>
+                                  <span className="italic text-slate-500">{t("tool.empty_code")}</span>
                                 )}
                               </div>
 
-                              <div className="flex items-center gap-1 pt-0.5">
-                                <Button size="sm" variant="outline" onClick={() => inspectVersion(ver)} className="h-6 text-[9px] px-2 rounded">
-                                  <Code className="h-3 w-3 mr-1 text-blue-500" /> {t("common.view")}
+                              <div className="flex items-center gap-1.5 pt-0.5">
+                                <Button size="sm" variant="outline" onClick={() => inspectVersion(ver)} className="h-6 text-[10px] px-2 rounded border-slate-300">
+                                  <Code className="h-3 w-3 mr-1 text-blue-600" /> {t("common.view")}
                                 </Button>
-                                <Button size="sm" variant="outline" onClick={() => rollbackVersion(ver.id)} className="h-6 text-[9px] px-2 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10 rounded">
+                                <Button size="sm" variant="outline" onClick={() => rollbackVersion(ver.id)} className="h-6 text-[10px] px-2 text-amber-700 border-amber-300 bg-amber-50/50 hover:bg-amber-100 rounded">
                                   <RotateCcw className="h-3 w-3 mr-1" /> {t("common.rollback")}
                                 </Button>
-                                <Button size="sm" variant="ghost" onClick={() => deleteVersion(ver.id)} className="h-6 w-6 p-0 text-destructive hover:bg-destructive/10 ml-auto rounded" title={t("common.delete")}>
+                                <Button size="sm" variant="ghost" onClick={() => deleteVersion(ver.id)} className="h-6 w-6 p-0 text-red-600 hover:bg-red-50 ml-auto rounded" title={t("common.delete")}>
                                   <Trash2 className="h-3 w-3" />
                                 </Button>
                               </div>
@@ -1331,45 +1533,45 @@ export function Categories() {
             )}
 
             {selectionMode === 'remote_tool' && selectedRemoteTool && (
-              <div className="flex flex-col h-full space-y-3">
-                <div className="flex justify-between items-start border-b border-border pb-2 bg-blue-500/10 p-3 rounded-xl border border-blue-500/20">
+              <div className="flex flex-col min-h-full space-y-3 pb-6">
+                <div className="flex justify-between items-start border-b border-slate-300 pb-2.5 bg-blue-50/50 p-3 rounded border border-blue-300">
                   <div>
-                    <div className="flex items-center gap-2 font-bold text-sm text-foreground">
-                      <Globe className="h-4 w-4 text-blue-500" />
+                    <div className="flex items-center gap-2 font-mono font-bold text-xs text-slate-900">
+                      <Globe className="h-4 w-4 text-blue-600" />
                       <span>{selectedRemoteTool.tool.name}</span>
-                      <span className="text-[9px] bg-blue-500/20 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded font-mono border border-blue-500/30">REMOTE / MCP</span>
+                      <span className="text-[9px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-mono border border-blue-300 uppercase">REMOTE / MCP</span>
                     </div>
-                    <div className="text-[10px] font-mono text-muted-foreground mt-0.5">
-                      Path: <span className="font-bold text-blue-600 dark:text-blue-400">{selectedRemoteTool.parentCategory.fullPath}{selectedRemoteTool.tool.path}</span>
+                    <div className="text-[10px] font-mono text-slate-500 mt-1">
+                      Path: <span className="font-bold text-blue-700">{selectedRemoteTool.parentCategory.fullPath}{selectedRemoteTool.tool.path}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <Label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1">
-                    <FileText className="h-3 w-3 text-blue-500" /> {t("tool.agent_description")}
+                  <Label className="text-[10px] font-mono uppercase font-bold text-slate-500 flex items-center gap-1">
+                    <FileText className="h-3 w-3 text-blue-600" /> {t("tool.agent_description")}
                   </Label>
-                  <div className="p-2.5 bg-muted/40 rounded-lg border border-border font-mono text-[11px] text-foreground">
+                  <div className="p-2.5 bg-slate-50 rounded border border-slate-300 font-mono text-[11px] text-slate-800">
                     {selectedRemoteTool.tool.description || t("tool.no_description")}
                   </div>
                 </div>
 
                 <div className="space-y-1 flex-1 flex flex-col min-h-[140px]">
-                  <Label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1">
-                    <Code className="h-3 w-3 text-purple-500" /> Input Schema
+                  <Label className="text-[10px] font-mono uppercase font-bold text-slate-500 flex items-center gap-1">
+                    <Code className="h-3 w-3 text-purple-600" /> {t("tool.schema_input")}
                   </Label>
-                  <div className="border border-border rounded-lg flex-1 overflow-hidden bg-background">
-                    <Editor height="100%" defaultLanguage="json" theme={monacoTheme} value={JSON.stringify(selectedRemoteTool.tool.inputSchema || {}, null, 2)} options={{ readOnly: true, minimap: { enabled: false }, fontSize: 11, lineNumbers: 'off' }} />
+                  <div className="border border-slate-300 rounded flex-1 overflow-hidden bg-white">
+                    <Editor height="100%" defaultLanguage="json" theme={monacoTheme} value={JSON.stringify(selectedRemoteTool.tool.inputSchema || {}, null, 2)} beforeMount={handleMonacoBeforeMount} options={{ readOnly: true, minimap: { enabled: false }, fontSize: 11, lineNumbers: 'off', renderValidationDecorations: 'off' }} />
                   </div>
                 </div>
 
-                <div className="border border-blue-500/20 bg-blue-500/10 rounded-xl p-3 space-y-2">
-                  <Textarea placeholder="Payload JSON..." className="h-16 font-mono text-xs p-2 resize-none bg-background border-border" value={remoteTestInput} onChange={e => setRemoteTestInput(e.target.value)} />
-                  <Button size="sm" onClick={executeRemoteToolTest} disabled={remoteTestLoading} className="h-8 bg-blue-600 hover:bg-blue-700 text-white w-full font-bold rounded-lg shadow-sm">
-                    <Play className="h-3.5 w-3.5 mr-1 fill-current" /> {remoteTestLoading ? t("tool.executing") : t("tool.run_on_remote")}
+                <div className="border border-blue-300 bg-blue-50/40 rounded p-3 space-y-2 shrink-0">
+                  <Textarea placeholder="Payload JSON..." className="h-16 font-mono text-xs p-2 resize-none bg-white border-slate-300 rounded" value={remoteTestInput} onChange={e => setRemoteTestInput(e.target.value)} />
+                  <Button size="sm" onClick={executeRemoteToolTest} disabled={remoteTestLoading} className="h-8 bg-blue-600 hover:bg-blue-700 text-white w-full font-semibold rounded border border-blue-700 shadow-2xs">
+                    <Play className="h-3.5 w-3.5 mr-1.5 fill-current" /> {remoteTestLoading ? t("tool.executing") : t("tool.run_on_remote")}
                   </Button>
                   {remoteTestResult && (
-                    <div className="border border-border rounded-lg bg-zinc-950 p-2 font-mono text-[10px] text-emerald-400 max-h-32 overflow-y-auto">
+                    <div className="border border-slate-800 rounded bg-zinc-950 p-2.5 font-mono text-[10px] text-emerald-400 max-h-32 overflow-y-auto">
                       <pre className="whitespace-pre-wrap">{JSON.stringify(remoteTestResult, null, 2)}</pre>
                     </div>
                   )}

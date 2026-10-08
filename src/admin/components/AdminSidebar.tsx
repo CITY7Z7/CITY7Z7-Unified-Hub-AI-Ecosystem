@@ -69,20 +69,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, onOpenSettings }) =>
   ];
 
   return (
-    <div className="w-80 bg-card border-r border-border flex flex-col h-full text-foreground select-none shrink-0 transition-all duration-300 ease-in-out relative">
+    <div className="w-80 bg-white border-r border-slate-300 flex flex-col h-full text-slate-800 select-none shrink-0 transition-all duration-200 relative">
       {/* Шапка боковой панели */}
-      <div className="h-[52px] min-h-[52px] max-h-[52px] px-4 border-b border-border flex items-center justify-between shrink-0 bg-white">
+      <div className="h-12 px-4 border-b border-slate-300 flex items-center justify-between shrink-0 bg-slate-50">
         <div className="flex items-center gap-2">
-          <span className="font-bold text-base tracking-tight text-foreground">
-            🛠️ ToolHub Skills
+          <span className="font-mono font-bold text-xs uppercase tracking-wider text-slate-700">
+            🛠️ TOOLHUB SKILLS
           </span>
         </div>
         <div className="flex items-center gap-1">
           {/* Кнопка открытия модалки настроек */}
           <button
             onClick={onOpenSettings}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent hover:border-border transition-all"
-            title={t('nav.settings') || "Settings"}
+            className="p-1 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-200/60 border border-transparent hover:border-slate-300 transition-all cursor-pointer"
+            title={t('nav.settings')}
           >
             <SettingsIcon className="w-4 h-4" />
           </button>
@@ -97,130 +97,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, onOpenSettings }) =>
             <Link
               key={l.path}
               to={l.path}
-              className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all border ${
+              className={`group flex items-center gap-3 px-3 py-2 rounded cursor-pointer transition-all border ${
                 isActive
-                  ? 'bg-muted border-border text-foreground font-medium shadow-sm'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                  ? 'bg-blue-50 border-blue-400 text-blue-900 font-semibold shadow-2xs'
+                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200'
               }`}
             >
               <l.icon
                 className={`w-4 h-4 shrink-0 ${
-                  isActive ? 'text-primary' : 'text-muted-foreground'
+                  isActive ? 'text-blue-600' : 'text-slate-500 group-hover:text-slate-700'
                 }`}
               />
-              <span className="text-xs truncate">{l.label}</span>
+              <span className="text-xs truncate font-medium">{l.label}</span>
             </Link>
           );
         })}
       </div>
 
-      {/* Баннерная бесконечная карусель */}
-{/*       {banners.length > 0 && (
-        <div
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
-          className="mx-4 mb-4 relative overflow-hidden rounded-xl h-[155px] min-w-[288px] shrink-0"
-        >
-          <div
-            className={`flex h-full ${
-              isTransitioning
-                ? 'transition-transform duration-1000 ease-[cubic-bezier(0.25,1,0.5,1)]'
-                : 'transition-none'
-            }`}
-            style={{ transform: `translateX(-${currentBannerIndex * 100}%)` }}
-          >
-            {displayBanners.map((banner, idx) => {
-              const isCyanTheme = banner.theme === 'cyan';
-              const activeDotIndex = currentBannerIndex % banners.length;
-              return (
-                <div
-                  key={idx}
-                  onClick={() => window.open(banner.link, '_blank')}
-                  className={`w-full h-full shrink-0 p-3.5 border rounded-xl flex flex-col justify-between shadow-sm relative overflow-hidden group cursor-pointer select-none ${
-                    isCyanTheme
-                      ? 'bg-gradient-to-br from-cyan-500/10 via-teal-500/5 to-blue-500/10 dark:from-cyan-950/30 dark:via-teal-950/20 dark:to-blue-950/30 border-cyan-500/20 dark:border-cyan-500/30 shadow-cyan-500/5 hover:border-cyan-500/40'
-                      : 'bg-gradient-to-br from-violet-500/10 via-fuchsia-500/5 to-pink-500/10 dark:from-violet-950/30 dark:via-fuchsia-950/20 dark:to-pink-950/30 border-violet-500/20 dark:border-violet-500/30 shadow-violet-500/5 hover:border-violet-500/40'
-                  }`}
-                >
-                  <div
-                    className={`absolute -right-8 -top-8 w-24 h-24 rounded-full blur-xl transition-opacity duration-1000 pointer-events-none ${
-                      isCyanTheme
-                        ? 'bg-cyan-500/15 group-hover:bg-cyan-500/25'
-                        : 'bg-violet-500/15 group-hover:bg-violet-500/25'
-                    }`}
-                  />
-
-                  <div className="flex items-center justify-between relative z-10 shrink-0">
-                    <span
-                      className={`text-[9px] font-extrabold tracking-wider uppercase px-2 py-0.5 rounded border ${
-                        isCyanTheme
-                          ? 'text-cyan-600 dark:text-cyan-400 bg-cyan-500/15 dark:bg-cyan-500/25 border-cyan-500/20'
-                          : 'text-violet-600 dark:text-violet-400 bg-violet-500/15 dark:bg-violet-500/25 border-violet-500/20'
-                      }`}
-                    >
-                      {t(banner.badgeKey)}
-                    </span>
-                    <span className="text-[9px] text-muted-foreground/80 font-semibold tracking-tight">
-                      {banner.subdomain || 'toolhub.dev'}
-                    </span>
-                  </div>
-
-                  <div className="relative z-10 flex-1 flex items-start py-1 overflow-hidden">
-                    <p className="text-[11px] text-foreground/85 dark:text-foreground/90 leading-snug font-sans">
-                      {t(banner.textKey)}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-between relative z-10 shrink-0 pt-1.5 border-t border-border/20">
-                    <a
-                      href={banner.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`text-[11px] font-bold flex items-center gap-1 transition-colors ${
-                        isCyanTheme
-                          ? 'text-cyan-600 dark:text-cyan-400 hover:text-cyan-500 dark:hover:text-cyan-300'
-                          : 'text-violet-600 dark:text-violet-400 hover:text-violet-500 dark:hover:text-violet-300'
-                      }`}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {t(banner.linkTextKey)}
-                    </a>
-
-                    {banners.length > 1 && (
-                      <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                        {banners.map((_, dotIdx) => (
-                          <button
-                            key={dotIdx}
-                            onClick={() => {
-                              setIsTransitioning(true);
-                              setCurrentBannerIndex(dotIdx);
-                            }}
-                            className={`h-1.5 rounded-full transition-all duration-500 ${
-                              dotIdx === activeDotIndex
-                                ? isCyanTheme
-                                  ? 'w-4 bg-cyan-500'
-                                  : 'w-4 bg-violet-500'
-                                : 'w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/60'
-                            }`}
-                            title={`Slide ${dotIdx + 1}`}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
- */}
       {/* Футер боковой панели */}
-      <div className="p-3 border-t border-border bg-slate-50 text-[11px] text-muted-foreground flex justify-between items-center">
-        <span>{t('sidebar.total_tools', { count: totalTools })}</span>
+      <div className="p-3 border-t border-slate-300 bg-slate-50 text-[11px] text-slate-600 flex justify-between items-center shrink-0">
+        <span className="font-mono text-[11px]">{t('sidebar.total_tools', { count: totalTools })}</span>
         <span 
-          className="px-2 py-0.5 rounded-md font-mono text-[11px] font-bold bg-green-50 text-green-700 border border-green-300 tracking-tight"
+          className="flex items-center gap-1.5 px-2 py-0.5 rounded font-mono text-[11px] font-bold bg-white text-slate-800 border border-slate-300 shadow-2xs tracking-tight"
         >
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
           v{packageJson.version}
         </span>
       </div>

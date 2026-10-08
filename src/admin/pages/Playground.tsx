@@ -27,6 +27,14 @@ interface HubCategoryPath {
   name: string;
 }
 
+const handleMonacoBeforeMount = (monaco: any) => {
+  if (monaco?.languages?.json) {
+    monaco.languages.json?.jsonDefaults?.setDiagnosticsOptions?.({
+      validate: false,
+    });
+  }
+};
+
 export function Playground() {
   const { t } = useI18n();
   const { monacoTheme } = useTheme();
@@ -210,51 +218,57 @@ export function Playground() {
   const hasSchemaProperties = Object.keys(inputSchemaProperties).length > 0;
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      {/* Шапка */}
-      <div className="h-[74.4px] min-h-[74.4px] max-h-[74.4px] px-6 border-b border-border flex items-center justify-end shrink-0 box-border">
+    <div className="h-full flex flex-col overflow-hidden bg-[#eef1f5]">
+      {/* Шапка щита оператора */}
+      <div className="h-12 px-4 border-b border-slate-300 bg-white flex items-center justify-between shrink-0 shadow-2xs">
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 text-xs font-mono bg-muted/50 px-3 py-1.5 rounded-lg border border-border">
-            <span className="text-muted-foreground text-[10px] uppercase font-bold tracking-tight">{t("play.host_label")}</span>
+          <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-700">
+            {t("nav.playground")}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 text-xs font-mono bg-slate-50 px-2.5 py-1 rounded border border-slate-300">
+            <span className="text-slate-500 text-[10px] uppercase font-bold tracking-tight">{t("play.host_label")}</span>
             <input 
               type="text" 
               value={hostUrl} 
               onChange={e => setHostUrl(e.target.value)} 
               placeholder="http://localhost:3000"
-              className="bg-transparent border-b border-purple-500 focus:outline-none w-44 text-xs font-mono text-foreground"
+              className="bg-transparent border-b border-slate-300 focus:border-blue-500 focus:outline-none w-44 text-xs font-mono text-slate-800"
             />
-            <Button size="sm" variant="ghost" onClick={() => syncNode()} disabled={isScanning} className="h-6 px-2 text-[10px] text-purple-600 dark:text-purple-400 font-bold hover:bg-purple-500/10 rounded">
+            <Button size="sm" variant="ghost" onClick={() => syncNode()} disabled={isScanning} className="h-6 px-2 text-[10px] text-blue-600 font-bold hover:bg-blue-50 rounded cursor-pointer">
               {isScanning ? t("play.fetching_paths") : t("play.sync_btn")}
             </Button>
           </div>
-          <Button size="sm" variant="ghost" onClick={() => setMessages([])} className="h-8 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 rounded-lg">
+          <Button size="sm" variant="outline" onClick={() => setMessages([])} className="h-8 text-xs text-red-600 hover:bg-red-50 hover:text-red-700 rounded border-slate-300 cursor-pointer">
             <Trash2 className="h-3.5 w-3.5 mr-1.5" /> {t("play.clear_chat")}
           </Button>
         </div>
       </div>
 
-      {/* Контент */}
-      <div className="p-4 flex-1 overflow-hidden min-h-0">
+      {/* Контент щита оператора */}
+      <div className="p-3 flex-1 overflow-hidden min-h-0">
         <div className="grid grid-cols-12 gap-3 h-full">
           {/* Левый блок - Конструктор / Редактор вызова */}
-          <div className="col-span-5 border border-border rounded-xl flex flex-col bg-card overflow-hidden p-3.5 gap-3">
-            <div className="flex justify-between items-center border-b border-border pb-2 shrink-0">
-              <div className="text-xs font-bold uppercase text-foreground flex items-center gap-1.5">
-                <Sparkles className="h-4 w-4 text-purple-500" /> {t("play.builder")}
+          <div className="col-span-5 border border-slate-300 rounded bg-white flex flex-col overflow-hidden p-3 gap-2.5 shadow-2xs">
+            <div className="flex justify-between items-center border-b border-slate-300 pb-2 shrink-0">
+              <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-blue-600" /> {t("play.builder")}
               </div>
-              <div className="flex items-center gap-1 bg-muted p-0.5 rounded-lg border border-border text-[10px] font-bold">
+              <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded border border-slate-200 text-[10px] font-bold">
                 <button
                   onClick={() => setMode("visual")}
-                  className={`px-2.5 py-1 rounded-md transition-all ${
-                    mode === "visual" ? "bg-background text-purple-600 dark:text-purple-400 shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
+                    mode === "visual" ? "bg-white text-blue-700 font-semibold shadow-2xs border border-slate-200" : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
                   {t("play.interactive")}
                 </button>
                 <button
                   onClick={() => setMode("raw")}
-                  className={`px-2.5 py-1 rounded-md transition-all ${
-                    mode === "raw" ? "bg-background text-purple-600 dark:text-purple-400 shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
+                    mode === "raw" ? "bg-white text-blue-700 font-semibold shadow-2xs border border-slate-200" : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
                   {t("play.raw")}
@@ -263,37 +277,37 @@ export function Playground() {
             </div>
 
             {mode === "visual" ? (
-              <div className="space-y-3 flex-1 overflow-y-auto pr-0.5">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-muted-foreground">{t("play.action_type")}</label>
+              <div className="space-y-2.5 flex-1 overflow-y-auto pr-0.5">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono uppercase font-bold text-slate-500">{t("play.action_type")}</label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       onClick={() => setActionType("list")}
-                      className={`p-2.5 border rounded-xl text-left text-xs font-bold flex items-center gap-2.5 transition-all ${
+                      className={`p-2 border rounded text-left text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
                         actionType === "list" 
-                          ? "bg-purple-500/15 border-purple-500/40 text-foreground" 
-                          : "bg-background border-border hover:bg-muted/50 text-muted-foreground hover:text-foreground"
+                          ? "bg-blue-50 border-blue-400 text-blue-900" 
+                          : "bg-white border-slate-300 hover:bg-slate-50 text-slate-700"
                       }`}
                     >
-                      <FolderTree className="h-4 w-4 text-purple-500 shrink-0" />
+                      <FolderTree className="h-4 w-4 text-blue-600 shrink-0" />
                       <div className="min-w-0">
                         <div className="truncate">{t("play.nav_action")}</div>
-                        <div className="text-[9px] font-normal text-muted-foreground truncate">{t("play.nav_desc")}</div>
+                        <div className="text-[9px] font-normal text-slate-500 truncate">{t("play.nav_desc")}</div>
                       </div>
                     </button>
 
                     <button
                       onClick={() => setActionType("call")}
-                      className={`p-2.5 border rounded-xl text-left text-xs font-bold flex items-center gap-2.5 transition-all ${
+                      className={`p-2 border rounded text-left text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
                         actionType === "call" 
-                          ? "bg-purple-500/15 border-purple-500/40 text-foreground" 
-                          : "bg-background border-border hover:bg-muted/50 text-muted-foreground hover:text-foreground"
+                          ? "bg-blue-50 border-blue-400 text-blue-900" 
+                          : "bg-white border-slate-300 hover:bg-slate-50 text-slate-700"
                       }`}
                     >
-                      <Terminal className="h-4 w-4 text-purple-500 shrink-0" />
+                      <Terminal className="h-4 w-4 text-blue-600 shrink-0" />
                       <div className="min-w-0">
                         <div className="truncate">{t("play.call_action")}</div>
-                        <div className="text-[9px] font-normal text-muted-foreground truncate">{t("play.call_desc")}</div>
+                        <div className="text-[9px] font-normal text-slate-500 truncate">{t("play.call_desc")}</div>
                       </div>
                     </button>
                   </div>
@@ -301,9 +315,9 @@ export function Playground() {
 
                 {/* Целевой путь в дереве */}
                 <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-bold text-muted-foreground">{t("play.target_path")}</label>
+                  <label className="text-[10px] font-mono uppercase font-bold text-slate-500">{t("play.target_path")}</label>
                   <select 
-                    className="h-8 w-full border border-border rounded-lg text-xs px-2.5 bg-background font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="h-8 w-full border border-slate-300 rounded text-xs px-2 bg-white font-mono text-slate-800 focus:outline-none focus:border-blue-500"
                     value={selectedPath}
                     onChange={e => {
                       setSelectedPath(e.target.value);
@@ -320,14 +334,14 @@ export function Playground() {
                 </div>
 
                 {actionType === "call" && (
-                  <div className="space-y-3 pt-2 border-t border-border">
+                  <div className="space-y-2.5 pt-2 border-t border-slate-200">
                     {/* Выбор инструмента */}
                     <div className="space-y-1">
-                      <label className="text-[10px] uppercase font-bold text-muted-foreground">
+                      <label className="text-[10px] font-mono uppercase font-bold text-slate-500">
                         {t("play.pick_tool", { count: pathTools.length })}
                       </label>
                       <select 
-                        className="h-8 w-full border border-border rounded-lg text-xs px-2.5 bg-background font-mono font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                        className="h-8 w-full border border-slate-300 rounded text-xs px-2 bg-white font-mono font-bold text-slate-800 focus:outline-none focus:border-blue-500"
                         value={selectedToolSlug}
                         onChange={e => {
                           const slug = e.target.value;
@@ -369,20 +383,20 @@ export function Playground() {
                     {/* Редактор параметров: Форма из JSON Schema vs Raw JSON */}
                     <div className="space-y-1.5">
                       <div className="flex justify-between items-center">
-                        <label className="text-[10px] uppercase font-bold text-muted-foreground">{t("play.payload")}</label>
-                        <div className="flex items-center gap-1 bg-muted p-0.5 rounded-md border border-border text-[9px] font-bold">
+                        <label className="text-[10px] font-mono uppercase font-bold text-slate-500">{t("play.payload")}</label>
+                        <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded border border-slate-200 text-[9px] font-bold">
                           <button
                             onClick={() => setPayloadMode("form")}
-                            className={`px-2 py-0.5 rounded transition-all flex items-center gap-1 ${
-                              payloadMode === "form" ? "bg-background text-purple-600 dark:text-purple-400 shadow-sm" : "text-muted-foreground"
+                            className={`px-2 py-0.5 rounded transition-all flex items-center gap-1 cursor-pointer ${
+                              payloadMode === "form" ? "bg-white text-blue-700 shadow-2xs font-semibold" : "text-slate-600"
                             }`}
                           >
                             <Sliders className="h-3 w-3" /> {t("play.form_mode")}
                           </button>
                           <button
                             onClick={() => setPayloadMode("json")}
-                            className={`px-2 py-0.5 rounded transition-all flex items-center gap-1 ${
-                              payloadMode === "json" ? "bg-background text-purple-600 dark:text-purple-400 shadow-sm" : "text-muted-foreground"
+                            className={`px-2 py-0.5 rounded transition-all flex items-center gap-1 cursor-pointer ${
+                              payloadMode === "json" ? "bg-white text-blue-700 shadow-2xs font-semibold" : "text-slate-600"
                             }`}
                           >
                             <Code2 className="h-3 w-3" /> {t("play.json_mode")}
@@ -391,14 +405,14 @@ export function Playground() {
                       </div>
 
                       {payloadMode === "form" ? (
-                        <div className="border border-border rounded-lg p-2.5 bg-background space-y-2.5 max-h-56 overflow-y-auto">
+                        <div className="border border-slate-300 rounded p-2.5 bg-slate-50 space-y-2 max-h-56 overflow-y-auto">
                           {!selectedToolObject ? (
-                            <div className="text-[11px] text-muted-foreground italic text-center py-4">
+                            <div className="text-[11px] text-slate-500 italic text-center py-4">
                               {t("play.select_tool_placeholder", { count: pathTools.length })}
                             </div>
                           ) : !hasSchemaProperties ? (
-                            <div className="text-[11px] text-muted-foreground text-center py-4 flex flex-col items-center gap-1">
-                              <AlertCircle className="h-4 w-4 text-purple-400" />
+                            <div className="text-[11px] text-slate-500 text-center py-4 flex flex-col items-center gap-1">
+                              <AlertCircle className="h-4 w-4 text-blue-600" />
                               <span>{t("play.no_params")}</span>
                             </div>
                           ) : (
@@ -408,17 +422,17 @@ export function Playground() {
                               const val = formValues[propKey];
 
                               return (
-                                <div key={propKey} className="space-y-1 border-b border-border/50 pb-2 last:border-0 last:pb-0">
+                                <div key={propKey} className="space-y-1 border-b border-slate-200 pb-2 last:border-0 last:pb-0">
                                   <div className="flex justify-between items-center text-[10px]">
-                                    <span className="font-bold font-mono text-foreground flex items-center gap-1">
+                                    <span className="font-bold font-mono text-slate-800 flex items-center gap-1">
                                       {propKey}
-                                      {isRequired && <span className="text-rose-500 font-bold">*</span>}
+                                      {isRequired && <span className="text-red-500 font-bold">*</span>}
                                     </span>
-                                    <span className="text-[9px] font-mono text-muted-foreground">({propType})</span>
+                                    <span className="text-[9px] font-mono text-slate-500">({propType})</span>
                                   </div>
 
                                   {propMeta.description && (
-                                    <p className="text-[9px] text-muted-foreground leading-tight">{propMeta.description}</p>
+                                    <p className="text-[9px] text-slate-500 leading-tight">{propMeta.description}</p>
                                   )}
 
                                   {propType === "boolean" ? (
@@ -433,7 +447,7 @@ export function Playground() {
                                       type="number"
                                       value={val !== undefined ? val : ""}
                                       onChange={e => updateFormField(propKey, e.target.value ? Number(e.target.value) : undefined)}
-                                      className="h-7 text-xs font-mono bg-background"
+                                      className="h-7 text-xs font-mono bg-white border-slate-300"
                                     />
                                   ) : propType === "object" || propType === "array" ? (
                                     <Textarea 
@@ -445,14 +459,14 @@ export function Playground() {
                                           updateFormField(propKey, e.target.value);
                                         }
                                       }}
-                                      className="h-14 font-mono text-[10px] p-1.5 resize-none bg-background"
+                                      className="h-14 font-mono text-[10px] p-1.5 resize-none bg-white border-slate-300"
                                     />
                                   ) : (
                                     <Input 
                                       type="text"
                                       value={val !== undefined ? val : ""}
                                       onChange={e => updateFormField(propKey, e.target.value)}
-                                      className="h-7 text-xs font-mono bg-background"
+                                      className="h-7 text-xs font-mono bg-white border-slate-300"
                                     />
                                   )}
                                 </div>
@@ -461,7 +475,7 @@ export function Playground() {
                           )}
                         </div>
                       ) : (
-                        <div className="border border-border rounded-lg overflow-hidden h-36 bg-background">
+                        <div className="border border-slate-300 rounded overflow-hidden h-36 bg-white">
                           <Editor 
                             height="100%" 
                             defaultLanguage="json" 
@@ -474,7 +488,14 @@ export function Playground() {
                                 setFormValues(JSON.parse(newPayload));
                               } catch {}
                             }}
-                            options={{ minimap: { enabled: false }, fontSize: 11, lineNumbers: "off", wordWrap: "on" }}
+                            beforeMount={handleMonacoBeforeMount}
+                            options={{ 
+                              minimap: { enabled: false }, 
+                              fontSize: 11, 
+                              lineNumbers: "off", 
+                              wordWrap: "on",
+                              renderValidationDecorations: 'off'
+                            }}
                           />
                         </div>
                       )}
@@ -484,20 +505,20 @@ export function Playground() {
               </div>
             ) : (
               <div className="flex-1 flex flex-col space-y-1">
-                <label className="text-[10px] uppercase font-bold text-muted-foreground">{t("play.raw_placeholder")}</label>
+                <label className="text-[10px] font-mono uppercase font-bold text-slate-500">{t("play.raw_placeholder")}</label>
                 <Textarea 
                   value={rawTag}
                   onChange={e => setRawTag(e.target.value)}
                   placeholder='<hub>callTool("/system/system-info", {})</hub>'
-                  className="flex-1 font-mono text-xs p-3 leading-relaxed resize-none border border-border bg-background focus-visible:ring-purple-500 whitespace-pre-wrap break-all"
+                  className="flex-1 font-mono text-xs p-3 leading-relaxed resize-none border border-slate-300 bg-white focus-visible:ring-blue-500 whitespace-pre-wrap break-all"
                 />
               </div>
             )}
 
-            <div className="space-y-2 border-t border-border pt-2 shrink-0">
+            <div className="space-y-2 border-t border-slate-300 pt-2 shrink-0">
               <div className="space-y-1">
-                <span className="text-[9px] font-bold text-muted-foreground uppercase">{t("play.command_preview")}</span>
-                <div className="p-2.5 bg-muted/50 border border-border rounded-lg text-foreground font-mono text-xs whitespace-pre-wrap break-all leading-tight">
+                <span className="text-[9px] font-mono font-bold text-slate-500 uppercase">{t("play.command_preview")}</span>
+                <div className="p-2 bg-slate-100 border border-slate-300 rounded text-slate-800 font-mono text-xs whitespace-pre-wrap break-all leading-tight">
                   {buildCurrentTag()}
                 </div>
               </div>
@@ -505,7 +526,7 @@ export function Playground() {
               <Button 
                 onClick={handleExecute} 
                 disabled={loading} 
-                className="w-full h-9 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg shadow-sm"
+                className="w-full h-8 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded border border-blue-700 shadow-2xs text-xs cursor-pointer"
               >
                 <Send className="h-3.5 w-3.5 mr-2" /> {loading ? t("play.simulating") : t("play.send")}
               </Button>
@@ -513,67 +534,69 @@ export function Playground() {
           </div>
 
           {/* Правый блок - История сообщений (Timeline) */}
-          <div className="col-span-7 border border-border rounded-xl flex flex-col bg-card overflow-hidden">
-            <div className="p-2.5 border-b border-border bg-muted/40 text-xs font-bold uppercase text-muted-foreground flex justify-between items-center shrink-0">
-              <span className="flex items-center gap-1.5"><Bot className="h-4 w-4 text-purple-500" /> {t("play.timeline")}</span>
+          <div className="col-span-7 border border-slate-300 rounded bg-white flex flex-col shadow-2xs overflow-hidden">
+            <div className="p-2.5 border-b border-slate-300 bg-slate-100 text-[10px] font-mono font-bold uppercase text-slate-700 flex justify-between items-center shrink-0">
+              <span className="flex items-center gap-1.5"><Bot className="h-4 w-4 text-blue-600" /> {t("play.timeline")}</span>
               <span className="text-[10px] font-mono">{t("play.events_count", { count: messages.length })}</span>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 bg-muted/10">
+            <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0 bg-slate-50/50">
               {messages.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center p-6 text-muted-foreground">
-                  <PlaySquare className="h-10 w-10 text-purple-400/50 mb-2 animate-pulse" />
-                  <div className="text-xs font-bold text-foreground">{t("play.ready")}</div>
-                  <p className="text-[11px] max-w-xs mt-1 text-muted-foreground">{t("play.ready_desc")}</p>
+                <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400">
+                  <PlaySquare className="h-10 w-10 text-slate-300 mb-2" />
+                  <div className="text-xs font-bold text-slate-700">{t("play.ready")}</div>
+                  <p className="text-[11px] max-w-xs mt-1 text-slate-500">{t("play.ready_desc")}</p>
                 </div>
               ) : (
                 messages.map(m => (
-                  <div key={m.id} className="space-y-1 animate-in fade-in duration-200">
+                  <div key={m.id} className="space-y-1">
                     {m.sender === "agent" ? (
                       <div className="flex gap-2.5 items-start max-w-[95%]">
-                        <div className="p-1.5 bg-purple-600 text-white rounded-lg shrink-0 mt-0.5 shadow-sm">
-                          <Bot className="h-4 w-4" />
+                        <div className="p-1 bg-blue-600 text-white rounded shrink-0 mt-0.5">
+                          <Bot className="h-3.5 w-3.5" />
                         </div>
-                        <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-3 space-y-1.5 text-xs flex-1 min-w-0">
-                          <div className="flex justify-between items-center gap-4 text-[9px] font-bold text-purple-600 dark:text-purple-400">
+                        <div className="bg-blue-50/70 border border-blue-200 rounded p-2.5 space-y-1 text-xs flex-1 min-w-0">
+                          <div className="flex justify-between items-center gap-4 text-[9px] font-mono font-bold text-blue-700">
                             <span>{t("play.agent_cmd")}</span>
                             <span>{m.timestamp}</span>
                           </div>
-                          <div className="font-mono text-[11px] text-foreground font-bold bg-background p-2.5 rounded-lg border border-border whitespace-pre-wrap break-all leading-relaxed">
+                          <div className="font-mono text-[11px] text-slate-900 font-bold bg-white p-2 rounded border border-blue-200 whitespace-pre-wrap break-all leading-relaxed">
                             {m.rawInput}
                           </div>
                         </div>
                       </div>
                     ) : (
                       <div className="flex gap-2.5 items-start max-w-[98%] ml-auto flex-row-reverse">
-                        <div className="p-1.5 bg-zinc-800 dark:bg-zinc-700 text-white rounded-lg shrink-0 mt-0.5 shadow-sm">
-                          <Cpu className="h-4 w-4" />
+                        <div className="p-1 bg-slate-700 text-white rounded shrink-0 mt-0.5">
+                          <Cpu className="h-3.5 w-3.5" />
                         </div>
-                        <div className="bg-card rounded-xl p-3 space-y-2 text-xs flex-1 min-w-0 border border-border shadow-sm">
-                          <div className="flex justify-between items-center text-[9px] font-mono text-muted-foreground border-b border-border pb-1.5">
-                            <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
-                              <CheckCircle2 className="h-3.5 w-3.5" /> {t("play.response")}
+                        <div className="bg-white rounded p-2.5 space-y-2 text-xs flex-1 min-w-0 border border-slate-300 shadow-2xs">
+                          <div className="flex justify-between items-center text-[9px] font-mono text-slate-500 border-b border-slate-200 pb-1.5">
+                            <span className="text-emerald-700 font-bold flex items-center gap-1">
+                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> {t("play.response")}
                             </span>
                             <span className="flex items-center gap-1 font-semibold">
                               <Clock className="h-3 w-3" /> {m.durationMs}ms | {m.timestamp}
                             </span>
                           </div>
 
-                          <div className="border border-border rounded-lg overflow-hidden h-48 bg-background">
+                          <div className="border border-slate-300 rounded overflow-hidden h-48 bg-white">
                             <Editor 
                               height="100%" 
                               defaultLanguage="json" 
                               theme={monacoTheme} 
                               value={formatJson(m.response)} 
+                              beforeMount={handleMonacoBeforeMount}
                               options={{ 
                                 readOnly: true, 
                                 minimap: { enabled: false }, 
-                                fontSize: 11,
-                                wordWrap: "on",
-                                lineNumbers: "off",
-                                scrollBeyondLastLine: false,
-                                automaticLayout: true,
-                                fontFamily: 'JetBrains Mono, monospace'
+                                fontSize: 11, 
+                                wordWrap: "on", 
+                                lineNumbers: "off", 
+                                scrollBeyondLastLine: false, 
+                                automaticLayout: true, 
+                                fontFamily: 'JetBrains Mono, monospace',
+                                renderValidationDecorations: 'off'
                               }} 
                             />
                           </div>

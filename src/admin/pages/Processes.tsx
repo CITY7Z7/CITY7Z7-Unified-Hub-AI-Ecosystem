@@ -54,75 +54,85 @@ export function Processes() {
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      {/* Шапка */}
-      <div className="h-[74.4px] min-h-[74.4px] max-h-[74.4px] px-6 border-b border-border flex items-center justify-between shrink-0 box-border">
+    <div className="h-full flex flex-col overflow-hidden bg-[#eef1f5]">
+      {/* Шапка щита оператора */}
+      <div className="h-12 px-4 border-b border-slate-300 bg-white flex items-center justify-between shrink-0 shadow-2xs">
         <div className="flex items-center gap-3">
-          <span className="text-xs font-mono bg-purple-500/10 text-purple-600 dark:text-purple-400 px-2.5 py-1 rounded-full border border-purple-500/20 font-bold">
-            {t("processes.active")}: {processes.length}
+          <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-700">
+            {t("nav.processes")} // {t("processes.active")}: {processes.length}
           </span>
-          <p className="text-muted-foreground text-xs hidden sm:block">
+          <span className="flex items-center gap-1.5 px-2 py-0.5 rounded font-mono text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-600 animate-pulse" />
+            POOL: {processes.length}
+          </span>
+          <p className="text-slate-500 text-xs hidden sm:block">
             {t("processes.desc")}
           </p>
         </div>
-        <Button onClick={() => loadProcesses(true)} variant="outline" size="sm" className="h-8 text-xs rounded-lg">
+        <Button 
+          onClick={() => loadProcesses(true)} 
+          variant="outline" 
+          size="sm" 
+          className="h-8 text-xs rounded border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-700 cursor-pointer"
+        >
           <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> {t("common.refresh")}
         </Button>
       </div>
 
-      {/* Рабочая область */}
+      {/* Рабочая область щита оператора */}
       <div className="p-4 flex-1 overflow-y-auto min-h-0 space-y-4">
         {processes.length === 0 ? (
-          <div className="h-full border border-dashed border-border rounded-xl flex flex-col items-center justify-center p-8 text-center bg-card">
-            <Layers className="h-10 w-10 text-muted-foreground/40 mb-3 animate-pulse" />
-            <p className="text-sm font-bold text-foreground">{t("processes.empty")}</p>
-            <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+          <div className="h-full border border-dashed border-slate-300 rounded bg-white flex flex-col items-center justify-center p-8 text-center shadow-2xs">
+            <Layers className="h-10 w-10 text-slate-400 mb-3" />
+            <p className="text-sm font-bold text-slate-800">{t("processes.empty")}</p>
+            <p className="text-xs text-slate-500 mt-1 max-w-sm">
               {t("processes.empty_desc")}
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {processes.map((proc) => (
-              <Card key={proc.catId} className="border border-border rounded-xl overflow-hidden shadow-sm bg-card hover:border-border/80 transition-all">
-                <CardHeader className="bg-muted/40 border-b border-border p-3.5 flex flex-row items-center justify-between space-y-0">
+              <Card key={proc.catId} className="border border-slate-300 rounded bg-white overflow-hidden shadow-2xs hover:border-slate-400 transition-colors">
+                <CardHeader className="bg-slate-50 border-b border-slate-300 p-3 flex flex-row items-center justify-between space-y-0">
                   <div className="min-w-0 pr-2">
-                    <CardTitle className="text-sm font-bold truncate flex items-center gap-1.5 text-foreground">
-                      <Cpu className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+                    <CardTitle className="text-xs font-mono font-bold uppercase truncate flex items-center gap-1.5 text-slate-800">
+                      <Cpu className="h-3.5 w-3.5 text-blue-600 shrink-0" />
                       {t("processes.category_id", { id: proc.catId })}
                     </CardTitle>
-                    <CardDescription className="font-mono text-[11px] mt-0.5 text-muted-foreground">
-                      PID: <span className="font-bold text-foreground">{proc.pid}</span>
+                    <CardDescription className="font-mono text-[11px] mt-0.5 text-slate-500 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      PID: <span className="font-bold text-slate-800">{proc.pid}</span>
                     </CardDescription>
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 text-destructive hover:bg-destructive/10 shrink-0 rounded-lg"
+                    className="h-7 w-7 text-red-600 hover:bg-red-50 hover:text-red-700 shrink-0 rounded cursor-pointer"
                     onClick={() => killProcess(proc.catId)}
                     title={t("common.delete")}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </CardHeader>
-                <CardContent className="p-3.5 grid grid-cols-2 gap-3 text-xs font-mono">
-                  <div className="flex items-center gap-2.5 bg-muted/40 p-2.5 rounded-lg border border-border">
-                    <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+                <CardContent className="p-3 grid grid-cols-2 gap-2.5 text-xs font-mono">
+                  <div className="flex items-center gap-2 bg-slate-50 p-2.5 rounded border border-slate-200">
+                    <Clock className="h-4 w-4 text-slate-500 shrink-0" />
                     <div className="min-w-0">
-                      <div className="text-[9px] text-muted-foreground uppercase font-sans font-bold truncate">
+                      <div className="text-[9px] text-slate-500 uppercase font-sans font-bold truncate">
                         {t("processes.idle")}
                       </div>
-                      <div className="font-bold truncate text-foreground">
+                      <div className="font-bold truncate text-slate-800">
                         {proc.idleSec} {t("processes.seconds")}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2.5 bg-purple-500/10 p-2.5 rounded-lg border border-purple-500/20">
-                    <Activity className="h-4 w-4 text-purple-600 dark:text-purple-400 shrink-0" />
+                  <div className="flex items-center gap-2 bg-blue-50/60 p-2.5 rounded border border-blue-200">
+                    <Activity className="h-4 w-4 text-blue-600 shrink-0" />
                     <div className="min-w-0">
-                      <div className="text-[9px] text-purple-600 dark:text-purple-400 uppercase font-sans font-bold truncate">
+                      <div className="text-[9px] text-blue-700 uppercase font-sans font-bold truncate">
                         {t("processes.queue")}
                       </div>
-                      <div className="font-bold truncate text-purple-700 dark:text-purple-300">
+                      <div className="font-bold truncate text-blue-900">
                         {proc.pendingRequests}
                       </div>
                     </div>

@@ -1,4 +1,13 @@
 {
+  "header": {
+    "ai_studio": "AI Studio",
+    "skills": "Skills",
+    "runners": "Runners",
+    "processes": "MCP Pool",
+    "logs": "Audit Logs",
+    "playground": "Playground",
+    "online": "Hub Online :3000"
+  },
   "nav": {
     "skills": "Skill Tree",
     "runners": "Runners",
