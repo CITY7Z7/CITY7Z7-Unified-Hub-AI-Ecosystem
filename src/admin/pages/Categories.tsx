@@ -1585,7 +1585,7 @@ export function Categories() {
       {/* Модалка Импорта с выбором целевой папки */}
       {importModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl w-full max-w-md p-5 space-y-4 shadow-2xl animate-in zoom-in-95 duration-150">
+          <div className="bg-card bg-blue-500/10 border border-border rounded-2xl w-full max-w-md p-5 space-y-4 shadow-2xl animate-in zoom-in-95 duration-150">
             <div className="flex justify-between items-center border-b border-border pb-2">
               <span className="font-bold text-sm uppercase flex items-center gap-2">
                 <Upload className="h-4 w-4 text-emerald-500" /> {t("cats.import_modal_title")}
@@ -1599,7 +1599,7 @@ export function Categories() {
               <div className="space-y-1">
                 <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t("cats.import_target_folder")}</Label>
                 <select 
-                  className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-mono text-foreground focus:outline-none"
+                  className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-mono text-foreground focus:outline-none bg-blue-50"
                   value={importTargetCatId} 
                   onChange={e => setImportTargetCatId(e.target.value)}
                 >
@@ -1616,7 +1616,7 @@ export function Categories() {
                   type="file" 
                   accept=".tool,.toolpack,.json,.txt,*"
                   onChange={e => setImportFile(e.target.files?.[0] || null)}
-                  className="w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-muted file:text-foreground hover:file:bg-muted/80 cursor-pointer border border-border rounded-lg p-1"
+                  className="w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-muted file:text-foreground hover:file:bg-muted/80 cursor-pointer border border-border rounded-lg p-1 bg-blue-50"
                 />
               </div>
             </div>
